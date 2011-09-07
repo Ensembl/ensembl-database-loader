@@ -54,11 +54,6 @@ sub run {
   return;
 }
 
-sub write_output {
-  my ($self) = @_;
-  return;
-}
-
 sub _switch_db {
   my ($self) = @_;
   my $db = $self->_database();
