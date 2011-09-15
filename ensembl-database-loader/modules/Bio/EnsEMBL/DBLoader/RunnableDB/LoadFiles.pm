@@ -15,13 +15,6 @@ use IO::Scalar;
 use IO::Uncompress::Gunzip qw(gunzip $GunzipError);
 use File::Spec;
 
-sub param_defaults {
-  my ($self) = @_;
-  return {
-    mock_db_name => 'test',
-  };
-}
-
 sub fetch_input {
   my ($self) = @_;
   my $local_dir = $self->local_dir();
@@ -204,16 +197,14 @@ sub _get_mysql_opts {
 
 sub _sql_helper {
   my ($self) = @_;
-  return $self->param('sql_helper') if $self->param('sql_helper');
-  return $self->param('sql_helper', Bio::EnsEMBL::Utils::SqlHelper->new(-DB_CONNECTION => $self->_dbc()));
+  return $self->_dbc()->sql_helper();
 }
 
 sub _dbc {
   my ($self) = @_;
   return $self->param('dbc') if $self->param('dbc');
   my $details = $self->param('target_db');
-  my $mock_db_name = $self->param('mock_db_name');
-  my $dbc = Bio::EnsEMBL::DBSQL::DBConnection->new(%{$details}, -reconnect_if_lost => 1, -dbname => $mock_db_name);
+  my $dbc = Bio::EnsEMBL::DBSQL::DBConnection->new(%{$details}, -reconnect_if_lost => 1);
   return $self->param('dbc', $dbc);
 }
 
