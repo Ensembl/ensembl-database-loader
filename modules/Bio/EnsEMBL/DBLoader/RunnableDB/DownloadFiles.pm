@@ -26,10 +26,7 @@ sub run {
   my $ftp = $self->connect_ftp();
   my $directory = $self->param('directory');
   $self->cwd_ftp_dir($directory);
-  my $ls = $self->ls_ftp_cwd();
-  foreach my $file (@{$ls->{files}}) {
-    $ftp->get($file) or throw "Cannot get the file $file from FTP ".$ftp->message();
-  }
+  $self->recurse();
   $self->disconnect_ftp();
 
   chdir($cwd) or throw "Cannot cd back to '$cwd'";
@@ -37,9 +34,38 @@ sub run {
   return;
 }
 
+sub recurse {
+  my ($self, @dirs) = @_;
+  
+  my $cwd;
+  if(@dirs) {
+    $cwd = cwd();
+    $self->_create_local_dir(@dirs);
+    $self->cwd_local_dir(@dirs);
+    
+    my $next_dir = $dirs[-1];
+    $self->cwd_ftp_dir($next_dir);
+  }
+  
+  my $ls = $self->ls_ftp_cwd();
+  foreach my $file (@{$ls->{files}}) {
+    $ftp->get($file) or throw "Cannot get the file $file from FTP ".$ftp->message();
+  }
+  foreach my $dir (@{$ls->{dirs}}) {
+    $self->recurse(@dirs, $dir);
+  }
+  
+  if($cwd) {
+    $self->cwd_ftp_dir('..');
+    chdir($cwd) or throw "Cannot cd back to '$cwd'";
+  }
+  
+  return;
+}
+
 sub _create_local_dir {
-  my ($self) = @_;
-  my $target = $self->local_dir();
+  my ($self, @dirs) = @_;
+  my $target = $self->local_dir(@dirs);
   if(-d $target) {
     throw "Cannot create the directory '${target}' as it already exists. Remove and rerun";
   }

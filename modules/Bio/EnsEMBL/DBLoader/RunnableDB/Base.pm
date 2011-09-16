@@ -68,17 +68,17 @@ sub ls_ftp_cwd {
 ##### Local File system ops
 
 sub cwd_local_dir {
-  my ($self) = @_;
-  my $dir = $self->local_dir();
+  my ($self, @dirs) = @_;
+  my $dir = File::Spec->catdir($self->local_dir(), @dirs);
   chdir($dir) or throw "Cannot cd to '${dir}'";
   return;
 }
 
 sub local_dir {
-  my ($self) = @_;
+  my ($self, @dirs) = @_;
   my $directory = $self->param('directory');
   my ($type, $target_name) = ($directory->[-2], $directory->[-1]);
-  my $target = File::Spec->catdir($self->param('work_directory'), $type, $target_name);
+  my $target = File::Spec->catdir($self->param('work_directory'), $type, $target_name, @dirs);
   return $target;
 }
 
