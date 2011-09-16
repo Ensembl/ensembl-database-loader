@@ -47,6 +47,7 @@ sub recurse {
     $self->cwd_ftp_dir($next_dir);
   }
   
+  my $ftp = $self->param('ftp');
   my $ls = $self->ls_ftp_cwd();
   foreach my $file (@{$ls->{files}}) {
     $ftp->get($file) or throw "Cannot get the file $file from FTP ".$ftp->message();
