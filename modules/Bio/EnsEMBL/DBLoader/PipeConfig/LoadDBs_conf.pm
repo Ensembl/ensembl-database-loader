@@ -111,7 +111,8 @@ sub pipeline_analyses {
         ftp_pass  => $self->o('ftp_pass'),
       },
       -flow_into => { 1 => [qw/checksum_files/] },
-      -hive_capacity => 1
+      -hive_capacity => 1,
+      -failed_job_tolerance => 10,
     },
 
     {
