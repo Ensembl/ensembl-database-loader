@@ -48,6 +48,7 @@ sub run {
     $self->cwd_ftp_dir($base_path);
     push(@targets, $self->_cwd_and_filter($base_path, 'data_files'));
   }
+  #TODO filter based upon if we have data_files; they don't have checksums
 
   $self->param('targets', \@targets);
 
