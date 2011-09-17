@@ -13,6 +13,8 @@ sub param_defaults {
     required_dbs => [],
     release => software_version(),
     division => '',
+    mysql => 1,
+    data_files => 1
   };
 }
 
@@ -36,17 +38,21 @@ sub run {
 
   my @targets;
 
-  if(exists $dirs_hash{mysql}) {
-    push(@targets, $self->_cwd_and_filter($base_path, 'mysql'));
-  }
-  else {
-    my $string_path = join(q{/}, @{$base_path});
-    throw sprintf('No mysql directory found at %s', $string_path);
+  if($self->param('mysql')) {
+    if(exists $dirs_hash{mysql}) {
+      push(@targets, $self->_cwd_and_filter($base_path, 'mysql'));
+    }
+    else {
+      my $string_path = join(q{/}, @{$base_path});
+      throw sprintf('No mysql directory found at %s', $string_path);
+    }
   }
 
-  if(exists $dirs_hash{data_files}) {
-    $self->cwd_ftp_dir($base_path);
-    push(@targets, $self->_cwd_and_filter($base_path, 'data_files'));
+  if($self->param('data_files')) {
+    if(exists $dirs_hash{data_files}) {
+      $self->cwd_ftp_dir($base_path);
+      push(@targets, $self->_cwd_and_filter($base_path, 'data_files'));
+    }
   }
   #TODO filter based upon if we have data_files; they don't have checksums
 
