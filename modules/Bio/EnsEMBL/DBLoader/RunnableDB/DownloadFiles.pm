@@ -76,6 +76,9 @@ sub _create_local_dir {
 
 sub write_output {
   my ($self) = @_;
+  if($self->param('checksum')) {
+    $self->dataflow_output_id({ directory => $self->param('directory') }, 2);
+  }
   return;
 }
 

@@ -40,7 +40,7 @@ sub run {
 
   if($self->param('mysql')) {
     if(exists $dirs_hash{mysql}) {
-      push(@targets, $self->_cwd_and_filter($base_path, 'mysql'));
+      push(@targets, { loc => $self->_cwd_and_filter($base_path, 'mysql'), checksum => 1 });
     }
     else {
       my $string_path = join(q{/}, @{$base_path});
@@ -51,10 +51,9 @@ sub run {
   if($self->param('data_files')) {
     if(exists $dirs_hash{data_files}) {
       $self->cwd_ftp_dir($base_path);
-      push(@targets, $self->_cwd_and_filter($base_path, 'data_files'));
+      push(@targets, { loc => $self->_cwd_and_filter($base_path, 'data_files'), checksum => 0 });
     }
   }
-  #TODO filter based upon if we have data_files; they don't have checksums
 
   $self->param('targets', \@targets);
 
@@ -91,7 +90,8 @@ sub write_output {
   my $targets = $self->param('targets');
   foreach my $t (@{$targets}) {
     my $hash = {
-      directory => $t
+      directory => $t->{loc},
+      checksum => $t->{checksum}
     };
     $self->dataflow_output_id($hash, 1);
   }
