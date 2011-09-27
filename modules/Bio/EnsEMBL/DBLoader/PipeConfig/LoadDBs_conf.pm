@@ -19,7 +19,7 @@ sub default_options {
 #    ftp_pass => ''
 
     #Required DBs; leave blank for all DBs
-    required_dbs => [],
+    required_dbs_file => '',
 
     #Set to the actual release or the current which
     release => software_version(),
@@ -89,13 +89,13 @@ sub pipeline_analyses {
       -logic_name => 'find_dbs',
       -module => 'Bio::EnsEMBL::DBLoader::RunnableDB::FindDbs',
       -parameters => {
-        required_dbs  => $self->o('required_dbs'),
-        release       => $self->o('release'),
-        division      => $self->o('division'),
-        ftp_host      => $self->o('ftp_host'),
-        ftp_port      => $self->o('ftp_port'),
-        ftp_user      => $self->o('ftp_user'),
-        ftp_pass      => $self->o('ftp_pass'),
+        required_dbs_file => $self->o('required_dbs_file'),
+        release           => $self->o('release'),
+        division          => $self->o('division'),
+        ftp_host          => $self->o('ftp_host'),
+        ftp_port          => $self->o('ftp_port'),
+        ftp_user          => $self->o('ftp_user'),
+        ftp_pass          => $self->o('ftp_pass'),
       },
       -input_ids => [{}],
       -flow_into => { 1 => [qw/download_files/] },

@@ -6,11 +6,12 @@ use base qw/Bio::EnsEMBL::DBLoader::RunnableDB::Base/;
 
 use Bio::EnsEMBL::ApiVersion;
 use Bio::EnsEMBL::Utils::Exception qw/throw/;
+use Bio::EnsEMBL::Utils::IO qw/slurp_to_array/;
 
 sub param_defaults {
   my ($self) = @_;
   return {
-    required_dbs => [],
+    required_dbs_file => '',
     release => software_version(),
     division => '',
     mysql => 1,
@@ -20,8 +21,12 @@ sub param_defaults {
 
 sub fetch_input {
   my ($self) = @_;
-
-  my %required_dbs = map { $_ => 1 } @{$self->param('required_dbs')};
+  
+  my $file = $self->param('required_dbs_file');
+  my %required_dbs;
+  if(-f $file) {
+    %required_dbs = map { $_ => 1 } @{slurp_to_array($file, 1)};
+  } 
   $self->param('required_dbs_hash', \%required_dbs);
 
   return;
@@ -40,7 +45,9 @@ sub run {
 
   if($self->param('mysql')) {
     if(exists $dirs_hash{mysql}) {
-      push(@targets, { loc => $self->_cwd_and_filter($base_path, 'mysql'), checksum => 1 });
+      foreach my $target ($self->_cwd_and_filter($base_path, 'mysql')) {
+        push(@targets, { loc => $target, checksum => 1 });
+      }
     }
     else {
       my $string_path = join(q{/}, @{$base_path});
@@ -51,7 +58,9 @@ sub run {
   if($self->param('data_files')) {
     if(exists $dirs_hash{data_files}) {
       $self->cwd_ftp_dir($base_path);
-      push(@targets, { loc => $self->_cwd_and_filter($base_path, 'data_files'), checksum => 0 });
+      foreach my $target ($self->_cwd_and_filter($base_path, 'data_files')) {
+        push(@targets, { loc => $target, checksum => 0 });
+      }
     }
   }
 
@@ -75,7 +84,7 @@ sub _cwd_and_filter {
   foreach my $sub_dir (@{$listings}) {
     if($process_required_dbs) {
       if(! exists $required_dbs->{$sub_dir}) {
-        print STDERR sprintf("Skipping %s as it was not in the required DBs list\n") if $self->debug();
+        print STDERR sprintf("Skipping %s as it was not in the required DBs list\n", $sub_dir) if $self->debug();
         next;
       }
     }
