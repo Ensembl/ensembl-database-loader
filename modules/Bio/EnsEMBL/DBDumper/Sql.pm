@@ -8,7 +8,7 @@ sub run {
   my ($self) = @_;
   my $sql = $self->_get_sql();
   my $fh = $self->fh();
-  print $fh $sql, "\n";
+  print $fh $sql, ';', "\n"x2;
   return;
 }
 
