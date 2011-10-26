@@ -15,7 +15,7 @@ use File::Path qw/mkpath/;
 sub new {
   my ($class, @args) = @_;
   $class = ref($class) || $class;
-  my ($tables, $dbc, $base_dir) = rearrange([qw/tables dbc base_dir/], @args);
+  my ($tables, $dbc, $base_dir, $sql) = rearrange([qw/tables dbc base_dir sql/], @args);
   
   assert_ref($dbc, 'Bio::EnsEMBL::DBSQL::DBConnection', '-DBC');
   throw "No -BASE_DIR given" unless $base_dir;
@@ -23,6 +23,7 @@ sub new {
   
   my $self = bless({ dbc => $dbc, base_dir => $base_dir }, $class);
   $self->tables($tables) if $tables;
+  $self->sql($sql) if $sql;
   
   return $self;
 }
@@ -31,7 +32,9 @@ sub run {
   my ($self) = @_;
   $self->_dump_sql();
   $self->_sql_output()->close();
-  $self->_dump_data();
+  if($self->sql()) {
+    $self->_dump_data();
+  }
   $self->_checksum();
   return;
 }
@@ -70,16 +73,23 @@ sub _checksum {
   closedir($dh) or throw "Cannot close directory $dir";
   
   my $checksum = File::Spec->catfile($dir, 'CHECKSUMS');
+  my $gz_checksum = "${checksum}.gz";
+  unlink $checksum if -f $checksum;
+  unlink $gz_checksum if -f $gz_checksum;
+  
   work_with_file($checksum, 'w', sub {
     my ($fh) = @_;
     foreach my $file (@files) {
       next if $file =~ /^\./; #hidden or up dir
+      next if $file =~ /^CHECKSUM/;
       my $path = File::Spec->catfile($dir, $file);
       my $sum = `sum $path`;
       $sum =~ s/\s* $path//xms; 
       print $fh $file, "\t", $sum;
     }
+    return;
   });
+  
   gzip $checksum => "${checksum}.gz" or throw "Cannot gzip checksum $checksum: $GzipError";
   unlink $checksum;
   
@@ -92,7 +102,7 @@ sub _get_data_objects {
   my $fh = $self->_sql_output();
   my $dir = $self->dir();
   my @objs;
-  foreach my $t (@{$self->tables()}) {
+  foreach my $t (@{$self->data_tables()}) {
     my $o = Bio::EnsEMBL::DBDumper::Data->new( 
       -NAME => $t, -FILE => File::Spec->catfile($dir, "${t}.txt"), -DBC => $dbc, -COMPRESS => 1 
     );
@@ -105,7 +115,7 @@ sub _get_sql_objects {
   my ($self) = @_;
   my $dbc = $self->dbc();
   my $fh = $self->_sql_output();
-  return [ map { Bio::EnsEMBL::DBDumper::Sql->new( -NAME => $_, -FH => $fh, -DBC => $dbc ) } @{$self->tables()} ];
+  return [ map { Bio::EnsEMBL::DBDumper::Sql->new( -NAME => $_, -FH => $fh, -DBC => $dbc ) } @{$self->all_tables()} ];
 }
 
 sub _filter_views {
@@ -126,8 +136,7 @@ sub _filter_views {
 sub _sql_output {
   my ($self, $_sql_output) = @_;
   if(! exists $self->{'_sql_output'} && ! defined $_sql_output) {
-    my $db = $self->dbc()->dbname();
-    my $file = File::Spec->catfile($self->dir(), "${db}.sql.gz");
+    my $file = $self->_sql_file();
     my $fh = IO::Compress::Gzip->new($file) or throw "Could not open Gzip to $file: $GzipError";
     $_sql_output = $fh;
   }
@@ -138,6 +147,18 @@ sub _sql_output {
   return $self->{'_sql_output'};
 }
 
+sub _sql_file {
+  my ($self) = @_;
+  my $db = $self->dbc()->dbname();
+  my $file = File::Spec->catfile($self->dir(), "${db}.sql.gz");
+  return $file;
+}
+
+sub sql {
+  my ($self) = @_;
+  return $self->{'sql'};
+}
+
 sub dbc {
   my ($self) = @_;
   return $self->{'dbc'};
@@ -145,15 +166,34 @@ sub dbc {
 
 sub tables {
   my ($self, $tables) = @_;
-  if(! exists $self->{'tables'} && ! defined $tables) {
-    $tables = $self->dbc()->sql_helper()->execute_simple(-SQL => 'show tables');
-    $tables = [sort { $a cmp $b } @{$tables}];
+  $self->{'tables'} = $tables if defined $tables;
+  return $self->{'tables'} || [];
+}
+
+sub all_tables {
+  my ($self, $all_tables) = @_;
+  if(! exists $self->{'all_tables'} && ! defined $all_tables) {
+    $all_tables = $self->dbc()->sql_helper()->execute_simple(-SQL => 'show tables');
+    $all_tables = [sort { $a cmp $b } @{$all_tables}];
   }
-  if(defined $tables) { 
-    assert_ref($tables, 'ARRAY', 'tables');
-  	$self->{'tables'} = $tables;
+  if(defined $all_tables) { 
+    assert_ref($all_tables, 'ARRAY', 'all_tables');
+  	$self->{'all_tables'} = $all_tables;
   }
-  return $self->{'tables'};
+  return $self->{'all_tables'};
+}
+
+sub data_tables {
+  my ($self) = @_;
+  my $user_tables = $self->tables();
+  return unless @{$user_tables};
+  my $all_tables = $self->all_tables();
+  my %allowed = map { $_ => 1 } @{$user_tables};
+  my @data_tables;
+  foreach my $t (@{$all_tables}) {
+    push (@data_tables, $t) if $allowed{$t};
+  }
+  return \@data_tables;
 }
 
 sub base_dir {

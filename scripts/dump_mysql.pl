@@ -33,6 +33,8 @@ sub args {
     pattern=s
     databases=s@
     directory=s
+    tables=s@
+    sql
     verbose
     help
     man
@@ -73,7 +75,7 @@ sub defaults {
   #DBs
   my $dbc = $self->dbc();
   if( $opts->{databases}) {
-    $opts->{databases} = wrap_array($opts->{databases});
+    $opts->{databases} = [split(/,/, join(q{,}, @{wrap_array($opts->{databases})}))];
   }
   else {
     my $pattern = $opts->{pattern};
@@ -87,6 +89,12 @@ sub defaults {
   $self->v(q{Found %d database(s) to process}, scalar(@{$opts->{databases}}));
   $dbc->disconnect_if_idle();
   
+  #Tables
+  if($opts->{tables} && ! $opts->{sql}) {
+    $opts->{tables} = [split(/,/, join(q{,}, @{wrap_array($opts->{tables})}))];
+    $self->v(q{Will work with the tables [%s]}, join(q{,}, @{$opts->{tables}}));
+  }
+  
   return;
 }
 
@@ -96,7 +104,8 @@ sub process {
   foreach my $db (@{$databases}) {
     $self->v('Working with database %s', $db);
     my $dumper = Bio::EnsEMBL::DBDumper->new(
-      -DBC => $self->dbc($db), -BASE_DIR => $self->opts()->{directory}
+      -DBC => $self->dbc($db), -BASE_DIR => $self->opts()->{directory},
+      -TABLES => $self->opts()->{tables}, -SQL => $self->opts()->{sql}
     );
     $dumper->run();
     $self->v('Finished with database %s', $db);
@@ -145,7 +154,17 @@ dump_mysql.pl
 
 =head1 SYNOPSIS
 
-  ./dump_mysql.pl --host HOST [--port PORT] --username USER [--password PASS] [-pattern '%' | -databases DB] -directory DIR [-help | -man]
+  ./dump_mysql.pl --host HOST [--port PORT] --username USER [--password PASS] [-pattern '%' | -databases DB] [-tables TABLE] -directory DIR [-help | -man]
+  
+  ./dump_mysql.pl --host srv --username root --pattern '%_64%' --directory $PWD/dumps
+  
+  ./dump_mysql.pl --host srv --username root --databases my_db --databases other_db --directory $PWD/dumps
+  
+  ./dump_mysql.pl --host srv --username root --databases my_db,toto_db --databases other_db --directory $PWD/dumps
+  
+  ./dump_mysql.pl --host srv --username root --databases my_db --tables dna,dnac --directory $PWD/dumps
+  
+  ./dump_mysql.pl --host srv --username root --databases my_db --tables dna --tables dnac --directory $PWD/dumps
 
 =head1 DESCRIPTION
 
@@ -182,12 +201,23 @@ be used in conjunction with the C<--databases> argument.
 =item B<--databases>
 
 Allows database name specification and can be used more than once. Cannot
-be used in conjunction with C<--pattern>.
+be used in conjunction with C<--pattern>. Comma separated values are 
+supported.
+
+=item B<--tables>
+
+Allows you to specify a table to perform the dumps for. This will be applied
+to all databases matching the given pattern or the list of databases. Be
+warned that this will cause a full SQL re-dump and checksum re-calculation.
 
 =item B<--directory>
 
 Target directory to place all dumps. A sub-directory will be created here;
 one per database dump.
+
+=item B<--sql>
+
+Force a dump of the SQL in this directory and nothing else.
 
 =item B<--verbose>
 

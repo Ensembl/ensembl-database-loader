@@ -38,6 +38,9 @@ sub _gzip_output {
   return unless $self->compress();
   my $file = $self->file();
   my $target_file = $file.'.gz';
+  if(-f $target_file) {
+    unlink $target_file or throw "Cannot remove the existing gzip file $target_file: $!";
+  }
   gzip $file => $target_file or throw ("gzip failed from $file to $target_file : $GzipError\n");
   if(-f $target_file) {
     unlink $file or throw "Cannot remove the file $file: $!";
