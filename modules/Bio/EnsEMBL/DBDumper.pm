@@ -57,6 +57,7 @@ sub _run_objs {
   my ($self, $objs, $type) = @_;
   foreach my $t (@{$objs}) {
     $t->run();
+    $t->dbc()->disconnect_if_idle();
   }
   return;
 }
