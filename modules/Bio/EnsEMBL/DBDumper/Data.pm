@@ -5,6 +5,7 @@ use warnings;
 use base qw/Bio::EnsEMBL::DBDumper::Base/;
 
 use Bio::EnsEMBL::Utils::Argument qw/rearrange/;
+use Bio::EnsEMBL::Utils::Exception qw/throw/;
 use IO::Compress::Gzip qw(gzip $GzipError);
 
 sub new {
@@ -12,7 +13,7 @@ sub new {
   my $self = $class->SUPER::new(@args);
   my ($compress) = rearrange([qw/compress/], @args);
   $self->compress($compress);
-  return;
+  return $self;
 }
 
 sub run {
@@ -26,9 +27,9 @@ sub _into_outfile {
   my ($self) = @_;
   my ($q_table) = @{$self->dbc()->quote_identifier($self->name())};
   my $file = $self->file();
-  my $force_escape = q{FIELDS OPTIONALLY ESCAPED BY '\\\\'};
-  my $sql = qq{SELECT * FROM $q_table INTO OUTFILE ? $force_escape};
-  $self->dbc()->sql_helper()->execute_no_return(-SQL => $sql, -PARAMS => [$file]);
+  my $force_escape = q{FIELDS ESCAPED BY '\\\\'};
+  my $sql = sprintf(q{SELECT * FROM %s INTO OUTFILE '%s' %s}, $q_table, $file, $force_escape);
+  $self->dbc()->do($sql);
   return;
 }
 
@@ -38,6 +39,9 @@ sub _gzip_output {
   my $file = $self->file();
   my $target_file = $file.'.gz';
   gzip $file => $target_file or throw ("gzip failed from $file to $target_file : $GzipError\n");
+  if(-f $target_file) {
+    unlink $file or throw "Cannot remove the file $file: $!";
+  }
   return;
 }
 

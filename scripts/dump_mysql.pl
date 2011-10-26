@@ -45,20 +45,17 @@ sub args {
 
 sub check {
   my ($self) = @_;
-  
   my $opts = $self->opts();
   
-  my @requireds = qw/host port username directory/;
+  my @requireds = qw/host username directory/;
   foreach my $r (@requireds) {
-    if($opts->{$r}) {
-      print STDERR "-${r} has not been given at the command line but is a required parameter\n";
-      pod2usage(-verbose => 1, -exitval => 1);
+    if(!$opts->{$r}) {
+      pod2usage(-message => "-${r} has not been given at the command line but is a required parameter", -verbose => 1, -exitval => 1);
     }
   }
     
   if($opts->{pattern} && $opts->{databases}) {
-    print STDERR "-pattern and -databases are mututally exclusive but have both been given at the command line\n";
-    pod2usage(-verbose => 1, -exitval => 1);
+    pod2usage(-message => "-pattern and -databases are mututally exclusive but have both been given at the command line", -verbose => 1, -exitval => 1);
   }
   
   return;
@@ -99,7 +96,7 @@ sub process {
   foreach my $db (@{$databases}) {
     $self->v('Working with database %s', $db);
     my $dumper = Bio::EnsEMBL::DBDumper->new(
-      -DBC => $self->dbc($db), -DIR => $self->opts()->{directory}
+      -DBC => $self->dbc($db), -BASE_DIR => $self->opts()->{directory}
     );
     $dumper->run();
     $self->v('Finished with database %s', $db);
