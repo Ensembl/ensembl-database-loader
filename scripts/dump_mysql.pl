@@ -22,8 +22,8 @@ sub run {
   $self->check();
   $self->defaults();
   $self->process();
-  
-  if($self->{oldfh}) {
+
+  if ($self->{oldfh}) {
     select($self->{oldfh});
   }
   return;
@@ -32,25 +32,27 @@ sub run {
 sub args {
   my ($self) = @_;
   my $opts = {};
-  GetOptions($opts, qw/
-    defaults
-    version
-    host=s
-    port=i
-    username=s
-    password=s
-    directory=s
-    databases=s@
-    groups=s@
-    species=s@
-    tables=s@
-    pattern=s
-    sql
-    verbose
-    log=s
-    help
-    man
-  /) or pod2usage(-verbose => 1, -exitval => 1);
+  GetOptions(
+    $opts, qw/
+      defaults
+      version
+      host=s
+      port=i
+      username=s
+      password=s
+      directory=s
+      databases=s@
+      groups=s@
+      species=s@
+      tables=s@
+      pattern=s
+      sql
+      verbose
+      log=s
+      help
+      man
+      /
+  ) or pod2usage(-verbose => 1, -exitval => 1);
   pod2usage(-verbose => 1, -exitval => 0) if $opts->{help};
   pod2usage(-verbose => 2, -exitval => 0) if $opts->{man};
   $self->{opts} = $opts;
@@ -60,32 +62,44 @@ sub args {
 sub check {
   my ($self) = @_;
   my $o = $self->opts();
-  
+
   my @required_params;
-  
-  if($o->{defaults}) {
+
+  if ($o->{defaults}) {
     @required_params = qw/version/;
-    pod2usage(-message => '-pattern is not supported with -defaults mode', -verbose => 1, -exitval => 1) if $o->{pattern};
-  }
-  else {
+    pod2usage(
+              -message => '-pattern is not supported with -defaults mode',
+              -verbose => 1,
+              -exitval => 1
+    ) if $o->{pattern};
+  } else {
     @required_params = qw/host username/;
-    pod2usage(-message => '-pattern is not supported with -databases mode', -verbose => 1, -exitval => 1) if $o->{pattern} && $o->{databases};
+    pod2usage(
+              -message => '-pattern is not supported with -databases mode',
+              -verbose => 1,
+              -exitval => 1
+    ) if $o->{pattern} && $o->{databases};
   }
-  
+
   foreach my $r (@required_params) {
-    if(!$o->{$r}) {
-      pod2usage(-message => "-${r} has not been given at the command line but is a required parameter", -verbose => 1, -exitval => 1);
+    if (!$o->{$r}) {
+      pod2usage(
+        -message =>
+"-${r} has not been given at the command line but is a required parameter",
+        -verbose => 1,
+        -exitval => 1
+      );
     }
   }
-  
+
   return;
 }
 
 sub defaults {
-  my ($self) = @_; 
+  my ($self) = @_;
   my $o = $self->opts();
-  
-  if($o->{log}) {
+
+  if ($o->{log}) {
     $o->{verbose} = 1;
     my $file = $o->{log};
     my $fh = IO::File->new($file, 'w');
@@ -93,63 +107,67 @@ sub defaults {
     my $oldfh = select($fh);
     $self->{oldfh} = $oldfh;
   }
-  
+
   #Processing -opt 1 -opt 2,3 into opt => [1,2,3]
   $self->_cmd_line_to_array('databases') if $o->{databases};
-  $self->_cmd_line_to_array('groups') if $o->{groups};
-  $self->_cmd_line_to_array('species') if $o->{species};
-  
+  $self->_cmd_line_to_array('groups')    if $o->{groups};
+  $self->_cmd_line_to_array('species')   if $o->{species};
+
   #Tables
-  if($o->{tables} && ! $o->{sql}) {
+  if ($o->{tables} && !$o->{sql}) {
     $self->_cmd_line_to_array('tables');
-    $self->v(q{Will work with the tables [%s]}, join(q{,}, @{$o->{tables}}));
+    $self->v(q{Will work with the tables [%s]}, join(q{,}, @{ $o->{tables} }));
   }
-  
-  if($o->{defaults}) {
+
+  if ($o->{defaults}) {
     $self->_set_opts_from_hostname();
-  }
-  else {
-    $o->{port} = 3306 if ! $o->{port};
-    if($o->{pattern}) {
-      $o->{databases} = $self->_all_dbs($o->{pattern}); 
+  } else {
+    $o->{port} = 3306 if !$o->{port};
+    if ($o->{pattern}) {
+      $o->{databases} = $self->_all_dbs($o->{pattern});
     }
     $o->{directory} = File::Spec->rel2abs($o->{directory});
   }
-  
-  $self->v(q{Using the database server %s@%s:%d}, map { $o->{$_} } qw/username host port/);
-  
+
+  $self->v(q{Using the database server %s@%s:%d},
+           map { $o->{$_} } qw/username host port/);
+
   #Filter for those on the specified server; sometimes redundant
-  my %dbs = map { $_ => 1} @{$self->_all_dbs()};
-  my @final_dbs = grep { $dbs{$_} } @{$o->{databases}};
+  my %dbs = map { $_ => 1 } @{ $self->_all_dbs() };
+  my @final_dbs = grep { $dbs{$_} } @{ $o->{databases} };
   $o->{databases} = \@final_dbs;
-  
+
   #Filtering DBs based on groups & species
-  if($o->{groups}) {
+  if ($o->{groups}) {
     my %dbs;
-    foreach my $group (@{$o->{groups}}) {
+    foreach my $group (@{ $o->{groups} }) {
       $self->v('Filtering for group %s', $group);
-      %dbs = map { $_ => 1} grep { / _ $group _ /xms } @{$o->{databases}};
+      %dbs = map { $_ => 1 } grep { / _ $group _ /xms } @{ $o->{databases} };
     }
-    $o->{databases} = [ keys %dbs];
+    $o->{databases} = [ keys %dbs ];
   }
-  if($o->{species}) {
+  if ($o->{species}) {
     my %dbs;
-    foreach my $species (@{$o->{species}}) {
+    foreach my $species (@{ $o->{species} }) {
       $self->v('Filtering for species %s', $species);
-      %dbs = map { $_ => 1} grep { / $species _ /xms } @{$o->{databases}};
+      %dbs = map { $_ => 1 } grep { / $species _ /xms } @{ $o->{databases} };
     }
-    $o->{databases} = [keys %dbs];
+    $o->{databases} = [ keys %dbs ];
   }
-  
+
   #Do we have any DBs left to process?
-  my $db_count = scalar(@{$o->{databases}});
-  if($db_count == 0) {
-    pod2usage(-msg => 'No databases found on the server '.$o->{host}, -exitval => 1, -verbose => 0);
+  my $db_count = scalar(@{ $o->{databases} });
+  if ($db_count == 0) {
+    pod2usage(
+              -msg     => 'No databases found on the server ' . $o->{host},
+              -exitval => 1,
+              -verbose => 0
+    );
   }
   $self->v(q{Working %d database(s)}, $db_count);
-  
-  $o->{databases} = [ sort { $a cmp $b } @{$o->{databases}} ];
-  
+
+  $o->{databases} = [ sort { $a cmp $b } @{ $o->{databases} } ];
+
   return;
 }
 
@@ -158,59 +176,57 @@ sub process {
   my $databases = $self->opts()->{databases};
   foreach my $db (@{$databases}) {
     $self->v('Working with database %s', $db);
-    
+
     #Setup connection
     $self->dbh($db);
-    
+
     $self->_setup_dir($db);
-    
+
     #Get all tables
-    my @tables = keys %{$self->tables()};
-    
+    my @tables = keys %{ $self->tables() };
+
     #Do data dumps if we didn't ask for just SQL
-    if(! $self->opts()->{sql}) {
+    if (!$self->opts()->{sql}) {
       my @tables_to_process;
-      if($self->opts()->{tables}) {
+      if ($self->opts()->{tables}) {
         my %lookup;
-        %lookup = map { $_ => 1 } @{$self->opts()->{tables}};
+        %lookup = map { $_ => 1 } @{ $self->opts()->{tables} };
         @tables_to_process = grep { $lookup{$_} } @tables;
-      }
-      else {
+      } else {
         @tables_to_process = @tables;
       }
       foreach my $table (sort { $a cmp $b } @tables_to_process) {
         next if $self->is_view($table);
         $self->data($table);
       }
-    }
-    else {
+    } else {
       $self->v('-sql mode is on so no data dumping will occur');
     }
-    
+
     #Do SQL
-    my $sql_file = $self->file($db.'.sql');
+    my $sql_file = $self->file($db . '.sql');
     unlink $sql_file if -f $sql_file;
     my $fh = IO::File->new($sql_file, 'w');
     my $writer = sub {
-      my (@tabs) = @_; 
+      my (@tabs) = @_;
       foreach my $table (sort { $a cmp $b } @tabs) {
         my $sql = $self->sql($table);
-        print $fh $sql, ';', "\n"x2;
+        print $fh $sql, ';', "\n" x 2;
       }
     };
-    $writer->(grep { ! $self->is_view($_) } @tables);
+    $writer->(grep { !$self->is_view($_) } @tables);
     $writer->(grep { $self->is_view($_) } @tables);
     close $fh;
     $self->compress($sql_file);
-    
+
     #Checksum the DB's files
     $self->checksum();
-    
+
     #Reset everything
     $self->clear_dbh();
     $self->clear_current_dir();
     $self->clear_tables();
-    
+
     $self->v('Finished with database %s', $db);
   }
   return;
@@ -219,14 +235,16 @@ sub process {
 sub sql {
   my ($self, $table) = @_;
   my $q_table = $self->dbh()->quote_identifier($table);
-  my $array = $self->dbh()->selectcol_arrayref(qq{SHOW CREATE TABLE $q_table}, {Columns => [2]});
+  my $array =
+    $self->dbh()
+    ->selectcol_arrayref(qq{SHOW CREATE TABLE $q_table}, { Columns => [2] });
   my $sql = $array->[0];
   return $self->modify_sql($sql, $table);
 }
 
 sub modify_sql {
   my ($self, $sql, $table) = @_;
-  if($self->is_view($table)) {
+  if ($self->is_view($table)) {
     $sql =~ s/DEFINER=.+ \s+ SQL/DEFINER=CURRENT_USER() SQL/xms;
     $sql =~ s/SQL \s+ SECURITY \s+ DEFINER/SQL SECURITY INVOKER/xms;
   }
@@ -236,10 +254,11 @@ sub modify_sql {
 sub data {
   my ($self, $table) = @_;
   return if $self->is_view($table);
-  my $q_table = $self->dbh()->quote_identifier($table);
-  my $file = $self->file($table.'.txt');
+  my $q_table      = $self->dbh()->quote_identifier($table);
+  my $file         = $self->file($table . '.txt');
   my $force_escape = q{FIELDS ESCAPED BY '\\\\'};
-  my $sql = sprintf(q{SELECT * FROM %s INTO OUTFILE '%s' %s}, $q_table, $file, $force_escape);
+  my $sql          = sprintf(q{SELECT * FROM %s INTO OUTFILE '%s' %s},
+                    $q_table, $file, $force_escape);
   $self->dbh()->do($sql);
   $self->compress($file);
   return;
@@ -248,43 +267,45 @@ sub data {
 sub checksum {
   my ($self) = @_;
   my $dir = $self->current_dir();
-  
+
   $self->v('Checksumming directory %s', $dir);
-  
+
   opendir(my $dh, $dir) or die "Cannot open directory $dir";
   my @files = sort { $a cmp $b } readdir($dh);
   closedir($dh) or die "Cannot close directory $dir";
-  
+
   my $checksum = File::Spec->catfile($dir, 'CHECKSUMS');
   unlink $checksum if -f $checksum;
-  
+
   my $fh = IO::File->new($checksum, 'w');
   foreach my $file (@files) {
-    next if $file =~ /^\./; #hidden file or up/current dir
+    next if $file =~ /^\./;         #hidden file or up/current dir
     next if $file =~ /^CHECKSUM/;
     my $path = File::Spec->catfile($dir, $file);
     my $sum = `sum $path`;
-    $sum =~ s/\s* $path//xms; 
+    $sum =~ s/\s* $path//xms;
     print $fh $file, "\t", $sum;
   }
   close $fh;
-  
+
   $self->compress($checksum);
-  
+
   return;
 }
 
 sub dbh {
   my ($self, $database) = @_;
-  if(! exists $self->{'dbh'}) {
+  if (!exists $self->{'dbh'}) {
     my $o = $self->opts();
-    my %args = ( host => $o->{host}, port => $o->{port});
+    my %args = (host => $o->{host}, port => $o->{port});
     $args{database} = $database if defined $database;
-    
-    my $dsn = 'DBI:mysql:'.join(q{;}, map { $_.'='.$args{$_} } keys %args);
+
+    my $dsn =
+      'DBI:mysql:' . join(q{;}, map { $_ . '=' . $args{$_} } keys %args);
     $self->v('DBI connection URI %s', $dsn);
-    my $dbh = DBI->connect($dsn, $o->{username}, $o->{password}, { RaiseError => 1});
-    
+    my $dbh =
+      DBI->connect($dsn, $o->{username}, $o->{password}, { RaiseError => 1 });
+
     $self->{dbh} = $dbh;
   }
   return $self->{'dbh'};
@@ -292,7 +313,7 @@ sub dbh {
 
 sub clear_dbh {
   my ($self) = @_;
-  if(exists $self->{dbh}) {
+  if (exists $self->{dbh}) {
     $self->{dbh}->disconnect();
     delete $self->{dbh};
   }
@@ -301,16 +322,17 @@ sub clear_dbh {
 
 sub is_view {
   my ($self, $table) = @_;
-  return ( $self->tables()->{$table} eq 'VIEW' ) ? 1 : 0;
+  return ($self->tables()->{$table} eq 'VIEW') ? 1 : 0;
 }
 
 sub tables {
   my ($self) = @_;
-  if(! exists $self->{tables}) {
-    my $array = $self->dbh()->selectcol_arrayref(
-      'select TABLE_NAME, TABLE_TYPE from information_schema.TABLES where TABLE_SCHEMA = DATABASE()', 
-      {Columns => [1,2]}
-    );
+  if (!exists $self->{tables}) {
+    my $array =
+      $self->dbh()->selectcol_arrayref(
+        'select TABLE_NAME, TABLE_TYPE from information_schema.TABLES where TABLE_SCHEMA = DATABASE()',
+        { Columns => [ 1, 2 ] }
+      );
     my %hits = @{$array};
     $self->{tables} = \%hits;
   }
@@ -347,15 +369,17 @@ sub opts {
 
 sub compress {
   my ($self, $file) = @_;
-  my $target_file = $file.'.gz';
-  
+  my $target_file = $file . '.gz';
+
   $self->v(q{Compressing '%s' to '%s'}, $file, $target_file);
-  
-  if(-f $target_file) {
-    unlink $target_file or die "Cannot remove the existing gzip file $target_file: $!";
+
+  if (-f $target_file) {
+    unlink $target_file
+      or die "Cannot remove the existing gzip file $target_file: $!";
   }
-  gzip $file => $target_file or die "gzip failed from $file to $target_file : $GzipError\n";
-  if(-f $target_file) {
+  gzip $file => $target_file
+    or die "gzip failed from $file to $target_file : $GzipError\n";
+  if (-f $target_file) {
     unlink $file or die "Cannot remove the file $file: $!";
   }
   return $target_file;
@@ -364,8 +388,12 @@ sub compress {
 sub v {
   my ($self, $msg, @args) = @_;
   return unless $self->opts()->{verbose};
-  my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time());
-  print sprintf('[%d-%d-%d %d:%d:%d] '.$msg, $mday, $mon+1, $year+1900, $hour, $min, $sec, @args), "\n";
+  my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) =
+    localtime(time());
+  print sprintf('[%d-%d-%d %d:%d:%d] ' . $msg,
+                $mday, $mon, $year + 1900,
+                $hour, $min, $sec, @args),
+    "\n";
   return;
 }
 
@@ -373,9 +401,10 @@ sub _setup_dir {
   my ($self, $db) = @_;
   my $dir = File::Spec->catdir($self->opts()->{directory}, $db);
   $self->current_dir($dir);
-  if(! -d $dir) {
+  if (!-d $dir) {
     mkpath($dir) or die "Cannot create directory $dir: $!";
-    chmod(0777, $dir) or die "Cannot change permissions on dir for everyone to write: $!";
+    chmod(0777, $dir)
+      or die "Cannot change permissions on dir for everyone to write: $!";
   }
   return $dir;
 }
@@ -384,26 +413,28 @@ sub _set_opts_from_hostname {
   my ($self) = @_;
   my $o = $self->opts();
   return unless $o->{defaults};
-  
-  my $host = $self->_host();
+
+  my $host     = $self->_host();
   my $settings = $self->_hostname_opts()->{$host};
-  confess "Specified -defaults but $host is not known to this script. Please edit the subroutine _hostname_opts() if you think it should be";
-  
+  confess
+"Specified -defaults but $host is not known to this script. Please edit the subroutine _hostname_opts() if you think it should be";
+
   #Setup default connection params
-  $o->{host} = $host;
-  $o->{port} = $settings->{port};
+  $o->{host}     = $host;
+  $o->{port}     = $settings->{port};
   $o->{username} = 'ensadmin';
   $o->{password} = 'ensembl';
-  
-  if(! $o->{databases}) {
+
+  if (!$o->{databases}) {
     $o->{databases} = $self->_all_dbs_regex($settings->{pattern});
   }
-  
+
   #Set default dir
-  my $target_dir = 'release-'.$o->{version};
-  my $dir = File::Spec->catdir(File::Spec->rootdir(), qw/mysql dumps/, $target_dir);
+  my $target_dir = 'release-' . $o->{version};
+  my $dir =
+    File::Spec->catdir(File::Spec->rootdir(), qw/mysql dumps/, $target_dir);
   $o->{dir} = $dir;
-  
+
   return;
 }
 
@@ -411,13 +442,24 @@ sub _hostname_opts {
   my ($self) = @_;
   my $version = $self->opts()->{version};
   return {
-    'ensdb-1-01' => { port => 5306, pattern => qr/[a-m]\w*_ $version _\d+[a-z]?/xms },
-    'ensdb-1-02' => { port => 5306, pattern => qr/[n-z]\w*_ $version _\d+[a-z]?/xms },
-    'ensdb-1-03' => { port => 5303, pattern => qr/ensembl_compara_ $version/xms },
-    'ensdb-1-04' => { port => 5303, pattern => qr/ensembl_(ancestral|ontology)_ $version/xms },
-    'ensdb-1-05' => { port => 5316, pattern => qr/[efvg]\w+_mart_\w* $version/xms },
-    'ensdb-1-06' => { port => 5316, pattern => qr/[os]\w+_*mart_\w* $version/xms },
-    'ensdb-1-13' => { port => 5307, pattern => qr/ensembl_website_ $version|ensembl_production_ $version/xms },
+      'ensdb-1-01' =>
+        { port => 5306, pattern => qr/[a-m]\w*_ $version _\d+[a-z]?/xms },
+      'ensdb-1-02' =>
+        { port => 5306, pattern => qr/[n-z]\w*_ $version _\d+[a-z]?/xms },
+      'ensdb-1-03' =>
+        { port => 5303, pattern => qr/ensembl_compara_ $version/xms },
+      'ensdb-1-04' => {
+                        port    => 5303,
+                        pattern => qr/ensembl_(ancestral|ontology)_ $version/xms
+      },
+      'ensdb-1-05' =>
+        { port => 5316, pattern => qr/[efvg]\w+_mart_\w* $version/xms },
+      'ensdb-1-06' =>
+        { port => 5316, pattern => qr/[os]\w+_*mart_\w* $version/xms },
+      'ensdb-1-13' => {
+        port    => 5307,
+        pattern => qr/ensembl_website_ $version|ensembl_production_ $version/xms
+      },
   };
 }
 
@@ -430,16 +472,17 @@ sub _host {
 
 sub _all_dbs_regex {
   my ($self, $pattern) = @_;
-  confess 'No pattern given' if ! $pattern;
+  confess 'No pattern given' if !$pattern;
   my $databases = $self->_all_dbs();
-  return [grep { $_ =~ $pattern } @{$databases}];
+  return [ grep { $_ =~ $pattern } @{$databases} ];
 }
 
 sub _all_dbs {
   my ($self, $pattern) = @_;
   $pattern ||= '%';
-  my $dbh = $self->dbh();
-  my $databases = $dbh->selectcol_arrayref('show databases like ?', {Columns => [1]}, $pattern);
+  my $dbh       = $self->dbh();
+  my $databases = $dbh->selectcol_arrayref('show databases like ?',
+                                           { Columns => [1] }, $pattern);
   $self->clear_dbh();
   return $databases;
 }
