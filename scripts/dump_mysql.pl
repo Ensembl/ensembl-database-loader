@@ -117,7 +117,7 @@ sub check {
     $self->v('Forcing Perl based GZip compression');
   }
   else {
-    `$gzip_binary --version`;
+    `$gzip_binary --version >/dev/null 2>/dev/null`;
     $self->{gzip_binary} = ($? == 0) ? 1 : 0;
     my $feedback = ($self->{gzip_binary}) ? 'available' : 'not available';
     $self->v('Gzip binary %s is %s', $gzip_binary, $feedback);
