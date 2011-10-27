@@ -15,10 +15,14 @@ use Pod::Usage;
 use Sys::Hostname;
 use IO::File;
 
+my $gzip_binary = 'pigz';
+my $pigz_processors = 4;
+
 sub run {
   my ($class) = @_;
   my $self = bless({}, $class);
   $self->args();
+  $self->logging();
   $self->check();
   $self->defaults();
   $self->process();
@@ -59,6 +63,20 @@ sub args {
   return;
 }
 
+sub logging {
+  my ($self) = @_;
+  my $o = $self->opts();
+  if ($o->{log}) {
+    $o->{verbose} = 1;
+    my $file = $o->{log};
+    my $fh = IO::File->new($file, 'w');
+    $fh->autoflush(1);
+    my $oldfh = select($fh);
+    $self->{oldfh} = $oldfh;
+  }
+  return;
+}
+
 sub check {
   my ($self) = @_;
   my $o = $self->opts();
@@ -91,6 +109,12 @@ sub check {
       );
     }
   }
+  
+  #Check if gzip command is available
+  `$gzip_binary --version`;
+  $self->{gzip_binary} = ($? == 0) ? 1 : 0;
+  my $feedback = ($self->{gzip_binary}) ? 'available' : 'not available';
+  $self->v('Gzip binary %s is %s', $gzip_binary, $feedback);
 
   return;
 }
@@ -98,15 +122,6 @@ sub check {
 sub defaults {
   my ($self) = @_;
   my $o = $self->opts();
-
-  if ($o->{log}) {
-    $o->{verbose} = 1;
-    my $file = $o->{log};
-    my $fh = IO::File->new($file, 'w');
-    $fh->autoflush(1);
-    my $oldfh = select($fh);
-    $self->{oldfh} = $oldfh;
-  }
 
   #Processing -opt 1 -opt 2,3 into opt => [1,2,3]
   $self->_cmd_line_to_array('databases') if $o->{databases};
@@ -254,11 +269,13 @@ sub modify_sql {
 sub data {
   my ($self, $table) = @_;
   return if $self->is_view($table);
+  $self->v('Dumping table %s', $table);
   my $q_table      = $self->dbh()->quote_identifier($table);
   my $file         = $self->file($table . '.txt');
   my $force_escape = q{FIELDS ESCAPED BY '\\\\'};
   my $sql          = sprintf(q{SELECT * FROM %s INTO OUTFILE '%s' %s},
                     $q_table, $file, $force_escape);
+  unlink $file if -f $file;
   $self->dbh()->do($sql);
   $self->compress($file);
   return;
@@ -330,8 +347,8 @@ sub tables {
   if (!exists $self->{tables}) {
     my $array =
       $self->dbh()->selectcol_arrayref(
-        'select TABLE_NAME, TABLE_TYPE from information_schema.TABLES where TABLE_SCHEMA = DATABASE()',
-        { Columns => [ 1, 2 ] }
+'select TABLE_NAME, TABLE_TYPE from information_schema.TABLES where TABLE_SCHEMA = DATABASE()',
+      { Columns => [ 1, 2 ] }
       );
     my %hits = @{$array};
     $self->{tables} = \%hits;
@@ -377,9 +394,15 @@ sub compress {
     unlink $target_file
       or die "Cannot remove the existing gzip file $target_file: $!";
   }
-  gzip $file => $target_file
-    or die "gzip failed from $file to $target_file : $GzipError\n";
-  if (-f $target_file) {
+  
+  if($self->{gzip_binary}) {
+    system ("$gzip_binary -q --processes $pigz_processors $file") and confess "Could not Gzip $file using $gzip_binary";
+  }
+  else {
+    gzip $file => $target_file
+      or die "gzip failed from $file to $target_file : $GzipError\n";
+  }
+  if (-f $target_file && -f $file) {
     unlink $file or die "Cannot remove the file $file: $!";
   }
   return $target_file;
@@ -417,56 +440,98 @@ sub _set_opts_from_hostname {
   my $host     = $self->_host();
   my $settings = $self->_hostname_opts()->{$host};
   confess
-"Specified -defaults but $host is not known to this script. Please edit the subroutine _hostname_opts() if you think it should be";
+"Specified -defaults but $host is not known to this script. Please edit the subroutine _hostname_opts() if you think it should be"
+    if !$settings;
 
   #Setup default connection params
   $o->{host}     = $host;
   $o->{port}     = $settings->{port};
-  $o->{username} = 'ensadmin';
-  $o->{password} = 'ensembl';
+  $o->{username} = $settings->{username};
+  $o->{password} = $settings->{password} if $settings->{password};
 
   if (!$o->{databases}) {
     $o->{databases} = $self->_all_dbs_regex($settings->{pattern});
   }
 
   #Set default dir
-  my $target_dir = 'release-' . $o->{version};
-  my $dir =
-    File::Spec->catdir(File::Spec->rootdir(), qw/mysql dumps/, $target_dir);
-  $o->{dir} = $dir;
+  $o->{directory} = $settings->{dir};
 
   return;
 }
 
 sub _hostname_opts {
   my ($self) = @_;
+
   my $version = $self->opts()->{version};
+
+  my $target_dir = 'release-' . $version;
+  my $default_dir =
+    File::Spec->catdir(File::Spec->rootdir(), qw/mysql dumps/, $target_dir);
+  my $user = 'ensadmin';
+  my $pass = 'ensembl';
+
   return {
-      'ensdb-1-01' =>
-        { port => 5306, pattern => qr/[a-m]\w*_ $version _\d+[a-z]?/xms },
-      'ensdb-1-02' =>
-        { port => 5306, pattern => qr/[n-z]\w*_ $version _\d+[a-z]?/xms },
-      'ensdb-1-03' =>
-        { port => 5303, pattern => qr/ensembl_compara_ $version/xms },
-      'ensdb-1-04' => {
-                        port    => 5303,
-                        pattern => qr/ensembl_(ancestral|ontology)_ $version/xms
-      },
-      'ensdb-1-05' =>
-        { port => 5316, pattern => qr/[efvg]\w+_mart_\w* $version/xms },
-      'ensdb-1-06' =>
-        { port => 5316, pattern => qr/[os]\w+_*mart_\w* $version/xms },
-      'ensdb-1-13' => {
-        port    => 5307,
-        pattern => qr/ensembl_website_ $version|ensembl_production_ $version/xms
-      },
+    'ensdb-1-01.internal.sanger.ac.uk' => {
+                      port     => 5306,
+                      pattern  => qr/[a-m]\w*_ $version _\d+[a-z]?/xms,
+                      dir      => $default_dir,
+                      username => $user,
+                      password => $pass
+    },
+    'ensdb-1-02.internal.sanger.ac.uk' => {
+                      port     => 5306,
+                      pattern  => qr/[n-z]\w*_ $version _\d+[a-z]?/xms,
+                      dir      => $default_dir,
+                      username => $user,
+                      password => $pass
+    },
+    'ensdb-1-03.internal.sanger.ac.uk' => {
+                      port     => 5303,
+                      pattern  => qr/ensembl_compara_ $version/xms,
+                      dir      => $default_dir,
+                      username => $user,
+                      password => $pass
+    },
+    'ensdb-1-04.internal.sanger.ac.uk' => {
+                      port     => 5303,
+                      pattern  => qr/ensembl_(ancestral|ontology)_ $version/xms,
+                      dir      => $default_dir,
+                      username => $user,
+                      password => $pass
+    },
+    'ensdb-1-05.internal.sanger.ac.uk' => {
+                      port     => 5316,
+                      pattern  => qr/[efvg]\w+_mart_\w* $version/xms,
+                      dir      => $default_dir,
+                      username => $user,
+                      password => $pass
+    },
+    'ensdb-1-06.internal.sanger.ac.uk' => {
+                      port     => 5316,
+                      pattern  => qr/[os]\w+_*mart_\w* $version/xms,
+                      dir      => $default_dir,
+                      username => $user,
+                      password => $pass
+    },
+    'ensdb-1-13.internal.sanger.ac.uk' => {
+       port    => 5307,
+       pattern => qr/ensembl_website_ $version|ensembl_production_ $version/xms,
+       dir     => $default_dir,
+       username => $user,
+       password => $pass
+    },
+    'swordtail.local' => {
+                   port    => 3306,
+                   pattern => qr/core.+/,
+                   dir => '/Users/ayates/git/ensembl-database-loader-web/dumps',
+                   username => 'root'
+    },
   };
 }
 
 sub _host {
   my ($self) = @_;
   my $host = hostname();
-  $host =~ s/([a-z0-9-]+) \. .+/$1/xms;
   return $host;
 }
 
@@ -635,6 +700,14 @@ Man page
 =item DBD::mysql
 
 =item IO::Compress::Gzip
+
+=back
+
+=head1 MAKING IT FASTER
+
+=over 8
+
+=item pigz L<http://www.zlib.net/pigz/> a parallel GZip compressor
 
 =back
 
