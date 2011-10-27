@@ -51,6 +51,7 @@ sub args {
       tables=s@
       pattern=s
       sql
+      perlgzip
       verbose
       log=s
       help
@@ -111,10 +112,16 @@ sub check {
   }
   
   #Check if gzip command is available
-  `$gzip_binary --version`;
-  $self->{gzip_binary} = ($? == 0) ? 1 : 0;
-  my $feedback = ($self->{gzip_binary}) ? 'available' : 'not available';
-  $self->v('Gzip binary %s is %s', $gzip_binary, $feedback);
+  if($o->{perlgzip}) {
+    $self->{gzip_binary} = 0;
+    $self->v('Forcing Perl based GZip compression');
+  }
+  else {
+    `$gzip_binary --version`;
+    $self->{gzip_binary} = ($? == 0) ? 1 : 0;
+    my $feedback = ($self->{gzip_binary}) ? 'available' : 'not available';
+    $self->v('Gzip binary %s is %s', $gzip_binary, $feedback);
+  }
 
   return;
 }
@@ -413,7 +420,7 @@ sub v {
   return unless $self->opts()->{verbose};
   my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) =
     localtime(time());
-  print sprintf('[%d-%d-%d %d:%d:%d] ' . $msg,
+  print sprintf('[%02d-%02d-%04d %02d:%02d:%02d] ' . $msg,
                 $mday, $mon, $year + 1900,
                 $hour, $min, $sec, @args),
     "\n";
@@ -678,6 +685,11 @@ the program is silent.
 =item B<--log>
 
 If given the script will write all logs to output. Switches on C<--verbose>
+
+=item B<--perlgzip>
+
+Force the use of Perl's GZip libraries rather than using external zipping 
+like pigz.
 
 =item B<--help>
 
