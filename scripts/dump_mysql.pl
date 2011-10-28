@@ -402,7 +402,9 @@ sub compress {
       or die "Cannot remove the existing gzip file $target_file: $!";
   }
   
-  if($self->{gzip_binary}) {
+  my @stats = stat($file);
+  my $size = $stats[7];
+  if($self->{gzip_binary} && $size >= 104_857_600) {
     system ("$gzip_binary -q --processes $pigz_processors $file") and confess "Could not Gzip $file using $gzip_binary";
   }
   else {
@@ -418,12 +420,12 @@ sub compress {
 sub v {
   my ($self, $msg, @args) = @_;
   return unless $self->opts()->{verbose};
+  my $s_msg = sprintf($msg, @args);
   my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) =
     localtime(time());
-  print sprintf('[%02d-%02d-%04d %02d:%02d:%02d] ' . $msg,
+  print sprintf("[%02d-%02d-%04d %02d:%02d:%02d] %s\n",
                 $mday, $mon, $year + 1900,
-                $hour, $min, $sec, @args),
-    "\n";
+                $hour, $min, $sec, $msg);
   return;
 }
 
