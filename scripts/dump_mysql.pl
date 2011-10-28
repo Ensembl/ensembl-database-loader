@@ -11,12 +11,14 @@ use File::Spec;
 use File::Path qw/mkpath/;
 use Getopt::Long;
 use IO::Compress::Gzip qw/gzip $GzipError/;
+use IO::Compress::Gzip qw(:constants);
 use Pod::Usage;
 use Sys::Hostname;
 use IO::File;
 
-my $gzip_binary = 'pigz';
-my $pigz_processors = 4;
+my $PIGZ_BINARY = 'pigz';
+my $PIGZ_PROCESSORS = 2; #ensdb-1-* only have 4 cores
+my $MAX_FILE_SIZE = 1_048_576; #anything greater than 1MB farm out
 
 sub run {
   my ($class) = @_;
@@ -113,14 +115,14 @@ sub check {
   
   #Check if gzip command is available
   if($o->{perlgzip}) {
-    $self->{gzip_binary} = 0;
+    $self->{pigz_binary} = 0;
     $self->v('Forcing Perl based GZip compression');
   }
   else {
-    `$gzip_binary --version >/dev/null 2>/dev/null`;
-    $self->{gzip_binary} = ($? == 0) ? 1 : 0;
-    my $feedback = ($self->{gzip_binary}) ? 'available' : 'not available';
-    $self->v('Gzip binary %s is %s', $gzip_binary, $feedback);
+    `$PIGZ_BINARY --version >/dev/null 2>/dev/null`;
+    $self->{pigz_binary} = ($? == 0) ? 1 : 0;
+    my $feedback = ($self->{pigz_binary}) ? 'available' : 'not available';
+    $self->v(q{pigz binary '%s' is %s}, $PIGZ_BINARY, $feedback);
   }
 
   return;
@@ -226,9 +228,9 @@ sub process {
     }
 
     #Do SQL
-    my $sql_file = $self->file($db . '.sql');
+    my $sql_file = $self->file($db . '.sql.gz');
     unlink $sql_file if -f $sql_file;
-    my $fh = IO::File->new($sql_file, 'w');
+    my $fh = IO::Compress::Gzip->new($sql_file) or croak "Cannot create gzip stream to $sql_file: $GzipError";
     my $writer = sub {
       my (@tabs) = @_;
       foreach my $table (sort { $a cmp $b } @tabs) {
@@ -238,7 +240,7 @@ sub process {
     };
     $writer->(grep { !$self->is_view($_) } @tables);
     $writer->(grep { $self->is_view($_) } @tables);
-    close $fh;
+    $fh->close();
     $self->compress($sql_file);
 
     #Checksum the DB's files
@@ -298,10 +300,10 @@ sub checksum {
   my @files = sort { $a cmp $b } readdir($dh);
   closedir($dh) or die "Cannot close directory $dir";
 
-  my $checksum = File::Spec->catfile($dir, 'CHECKSUMS');
+  my $checksum = $self->file('CHECKSUMS.gz');
   unlink $checksum if -f $checksum;
 
-  my $fh = IO::File->new($checksum, 'w');
+  my $fh = IO::Compress::Gzip->new($checksum) or croak "Cannot create gzip stream to $checksum: $GzipError";
   foreach my $file (@files) {
     next if $file =~ /^\./;         #hidden file or up/current dir
     next if $file =~ /^CHECKSUM/;
@@ -310,7 +312,7 @@ sub checksum {
     $sum =~ s/\s* $path//xms;
     print $fh $file, "\t", $sum;
   }
-  close $fh;
+  $fh->close();
 
   $self->compress($checksum);
 
@@ -404,11 +406,11 @@ sub compress {
   
   my @stats = stat($file);
   my $size = $stats[7];
-  if($self->{gzip_binary} && $size >= 104_857_600) {
-    system ("$gzip_binary -q --processes $pigz_processors $file") and confess "Could not Gzip $file using $gzip_binary";
+  if($self->{pigz_binary} && $size >= $MAX_FILE_SIZE) {
+    system ("$PIGZ_BINARY --processes $PIGZ_PROCESSORS -9 $file") and confess "Could not pigz $file using $PIGZ_BINARY";
   }
   else {
-    gzip $file => $target_file
+    gzip $file => $target_file, -Level => Z_BEST_COMPRESSION
       or die "gzip failed from $file to $target_file : $GzipError\n";
   }
   if (-f $target_file && -f $file) {
@@ -425,7 +427,7 @@ sub v {
     localtime(time());
   print sprintf("[%02d-%02d-%04d %02d:%02d:%02d] %s\n",
                 $mday, $mon, $year + 1900,
-                $hour, $min, $sec, $msg);
+                $hour, $min, $sec, $s_msg);
   return;
 }
 
@@ -529,7 +531,7 @@ sub _hostname_opts {
        username => $user,
        password => $pass
     },
-    'swordtail.local' => {
+    'swordtail.windows.ebi.ac.uk' => {
                    port    => 3306,
                    pattern => qr/core.+/,
                    dir => '/Users/ayates/git/ensembl-database-loader-web/dumps',
