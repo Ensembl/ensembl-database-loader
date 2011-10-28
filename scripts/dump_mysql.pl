@@ -11,7 +11,6 @@ use File::Spec;
 use File::Path qw/mkpath/;
 use Getopt::Long;
 use IO::Compress::Gzip qw/gzip $GzipError/;
-use IO::Compress::Gzip qw(:constants);
 use Pod::Usage;
 use Sys::Hostname;
 use IO::File;
@@ -407,10 +406,10 @@ sub compress {
   my @stats = stat($file);
   my $size = $stats[7];
   if($self->{pigz_binary} && $size >= $MAX_FILE_SIZE) {
-    system ("$PIGZ_BINARY --processes $PIGZ_PROCESSORS -9 $file") and confess "Could not pigz $file using $PIGZ_BINARY";
+    system ("$PIGZ_BINARY --processes $PIGZ_PROCESSORS -4 $file") and confess "Could not pigz $file using $PIGZ_BINARY";
   }
   else {
-    gzip $file => $target_file, -Level => Z_BEST_COMPRESSION
+    gzip $file => $target_file
       or die "gzip failed from $file to $target_file : $GzipError\n";
   }
   if (-f $target_file && -f $file) {
@@ -533,7 +532,7 @@ sub _hostname_opts {
     },
     'swordtail.windows.ebi.ac.uk' => {
                    port    => 3306,
-                   pattern => qr/core.+/,
+                   pattern => qr/core.+ $version .+/xms,
                    dir => '/Users/ayates/git/ensembl-database-loader-web/dumps',
                    username => 'root'
     },
