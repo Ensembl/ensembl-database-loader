@@ -530,12 +530,6 @@ sub _hostname_opts {
        username => $user,
        password => $pass
     },
-    'swordtail.windows.ebi.ac.uk' => {
-                   port    => 3306,
-                   pattern => qr/core.+ $version .+/xms,
-                   dir => '/Users/ayates/git/ensembl-database-loader-web/dumps',
-                   username => 'root'
-    },
   };
 }
 
