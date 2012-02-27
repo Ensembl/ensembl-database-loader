@@ -2,12 +2,10 @@ package Bio::EnsEMBL::DBLoader::RunnableDB::LoadFiles;
 
 use strict;
 use warnings;
-use base qw/Bio::EnsEMBL::DBLoader::RunnableDB::Base/;
-use Bio::EnsEMBL::DBSQL::DBConnection;
-use Bio::EnsEMBL::Utils::SqlHelper;
+use base qw/Bio::EnsEMBL::DBLoader::RunnableDB::Base Bio::EnsEMBL::DBLoader::RunnableDB::Database/;
+
 use Bio::EnsEMBL::Utils::Exception qw/throw/;
 use Bio::EnsEMBL::Utils::Scalar qw/wrap_array/;
-
 use Cwd;
 use File::Temp qw(tempfile);
 use IO::File;
@@ -32,7 +30,7 @@ sub run {
     throw "The database already exists. Remove and retry";
   }
   $self->_create_db();
-  $self->_switch_db();
+  $self->switch_db($self->database());
   chdir($self->local_dir()) or throw 'Cannot change to '.$self->local_dir();
 
   $self->_load_sql();
@@ -47,22 +45,18 @@ sub run {
   return;
 }
 
-sub _switch_db {
-  my ($self) = @_;
-  my $db = $self->_database();
-  $self->_dbc()->disconnect_if_idle();
-  $self->_dbc()->dbname($db);
-  return;
-}
-
-sub _database {
-  my ($self) = @_;
-  return $self->param('directory')->[-1];
-}
+#### Private methods
 
 sub _db_exists {
   my ($self) = @_;
-  return ($self->_db_hash()->{$self->_database()}) ? 1 : 0;
+  return ($self->db_hash()->{$self->database()}) ? 1 : 0;
+}
+
+sub _create_db {
+  my ($self) = @_;
+  my $db = $self->database();
+  $self->dbc()->do("create database `$db`");
+  return;
 }
 
 #Filters SQL into two files; 1 with tables & the other with views
@@ -79,7 +73,7 @@ sub _load_sql {
     my ($line) = @_;
     return ( $line !~ /CREATE ALGORITHM/ ) ? 1 : 0;
   });
-  $self->_run_mysql_cmd($table_sql);
+  $self->run_mysql_cmd($table_sql);
 
   my $view_sql = $self->_filter_file($file, sub {
     my ($line) = @_;
@@ -91,7 +85,7 @@ sub _load_sql {
   });
 
   if($view_sql) {
-    $self->_run_mysql_cmd($view_sql);
+    $self->run_mysql_cmd($view_sql);
   }
 
   return;
@@ -101,7 +95,7 @@ sub _load_sql {
 sub _load_data_file {
   my ($self, $table, $files) = @_;
 
-  my $is_view = $self->_is_view($table);
+  my $is_view = $self->is_view($table);
 
   if($is_view) {
     print STDERR "\tSkipping $table as it is a VIEW not a table\n" if $self->debug();
@@ -117,7 +111,7 @@ sub _load_data_file {
 
   my $force_escape = q{FIELDS ESCAPED BY '\\\\'};
   my $sql = qq|LOAD DATA LOCAL INFILE '${target_file}' INTO TABLE `${table}` ${force_escape}|;
-  $self->_dbc()->do($sql);
+  $self->dbc()->do($sql);
 
   $self->_enable_indexes($table);
   $self->_optimize_table($table);
@@ -125,87 +119,6 @@ sub _load_data_file {
 
   unlink($target_file);
   return;
-}
-
-sub _db_hash {
-  my ($self) = @_;
-  return {
-    map { $_ => 1}
-    @{$self->_sql_helper()->execute_simple(-SQL => 'show databases')}
-  };
-}
-
-sub _is_view {
-  my ($self, $table) = @_;
-  my $view = 0;
-  $self->_sql_helper()->execute_no_return(
-    -SQL => sprintf('SHOW FULL TABLES FROM `%s` like ?', $self->_database()),
-    -PARAMS => [$table],
-    -CALLBACK => sub {
-      my ($row) = @_;
-      $view = ($row->[1] =~ /view/xmsi) ? 1 : 0;
-    }
-  );
-}
-
-sub _create_db {
-  my ($self) = @_;
-  my $db = $self->_database();
-  $self->_dbc()->do("create database `$db`");
-  return;
-}
-
-sub _disable_indexes {
-  my ($self, $table) = @_;
-  $self->_dbc()->do("alter table `${table}` disable keys");
-  return;
-}
-
-sub _enable_indexes {
-  my ($self, $table) = @_;
-  $self->_dbc()->do("alter table `${table}` enable keys");
-  return;
-}
-
-sub _optimize_table {
-  my ($self, $table) = @_;
-  $self->_dbc()->do("optimize table `${table}`");
-  return;
-}
-
-sub _run_mysql_cmd {
-  my ($self, $sql) = @_;
-  my $dbc = $self->_dbc();
-  my $mysql_login_args = $self->_get_mysql_opts();
-  my $database = $self->_database();
-  my ($fh, $filename) = tempfile();
-  print $fh $sql;
-  close $fh;
-  system("mysql $mysql_login_args $database < $filename")
-    and throw("Cannot issue $sql to mysql and DB ${database}: $!");
-  return;
-}
-
-sub _get_mysql_opts {
-  my ($self) = @_;
-  my $dbc = $self->_dbc();
-  my %args = ( host => $dbc->host(), port => $dbc->port(), user => $dbc->username());
-  $args{password} = $dbc->password() if $dbc->password();
-  #Turns the above into --host=localhost --port=3306
-  return join(q{ }, map { sprintf(q{--%s='%s'}, $_, $args{$_}) } keys %args);
-}
-
-sub _sql_helper {
-  my ($self) = @_;
-  return $self->_dbc()->sql_helper();
-}
-
-sub _dbc {
-  my ($self) = @_;
-  return $self->param('dbc') if $self->param('dbc');
-  my $details = $self->param('target_db');
-  my $dbc = Bio::EnsEMBL::DBSQL::DBConnection->new(%{$details}, -reconnect_if_lost => 1);
-  return $self->param('dbc', $dbc);
 }
 
 sub _gunzip_file {
@@ -270,6 +183,25 @@ sub _dump_files {
   }
 
   return %file_hash;
+}
+
+
+sub _disable_indexes {
+  my ($self, $table) = @_;
+  $self->dbc()->do("alter table `${table}` disable keys");
+  return;
+}
+
+sub _enable_indexes {
+  my ($self, $table) = @_;
+  $self->dbc()->do("alter table `${table}` enable keys");
+  return;
+}
+
+sub _optimize_table {
+  my ($self, $table) = @_;
+  $self->dbc()->do("optimize table `${table}`");
+  return;
 }
 
 1;
