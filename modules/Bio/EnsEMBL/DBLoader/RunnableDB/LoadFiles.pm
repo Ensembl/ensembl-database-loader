@@ -7,7 +7,6 @@ use base qw/Bio::EnsEMBL::DBLoader::RunnableDB::Base Bio::EnsEMBL::DBLoader::Run
 use Bio::EnsEMBL::Utils::Exception qw/throw/;
 use Bio::EnsEMBL::Utils::Scalar qw/wrap_array/;
 use Cwd;
-use File::Temp qw(tempfile);
 use IO::File;
 use IO::Scalar;
 use IO::Uncompress::Gunzip qw(gunzip $GunzipError);

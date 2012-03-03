@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use Bio::EnsEMBL::DBSQL::DBConnection;
+use File::Temp qw(tempfile);
 
 sub sql_helper {
   my ($self) = @_;
