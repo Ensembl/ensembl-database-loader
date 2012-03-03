@@ -43,7 +43,7 @@ sub is_view {
   my ($self, $table) = @_;
   my $view = 0;
   $self->sql_helper()->execute_no_return(
-    -SQL => sprintf('SHOW FULL TABLES FROM `%s` like ?', $self->_database()),
+    -SQL => sprintf('SHOW FULL TABLES FROM `%s` like ?', $self->database()),
     -PARAMS => [$table],
     -CALLBACK => sub {
       my ($row) = @_;
