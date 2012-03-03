@@ -114,7 +114,7 @@ sub _load_data_file {
   $self->dbc()->do($sql);
 
   $self->_enable_indexes($table);
-  $self->_optimize_table($table);
+  $self->_analyze_table($table);
   print STDERR "\tFinished processing $table\n" if $self->debug();
 
   unlink($target_file);
@@ -198,9 +198,9 @@ sub _enable_indexes {
   return;
 }
 
-sub _optimize_table {
+sub _analyze_table {
   my ($self, $table) = @_;
-  $self->dbc()->do("optimize table `${table}`");
+  $self->dbc()->do("analyze table `${table}`");
   return;
 }
 
