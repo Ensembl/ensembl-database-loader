@@ -55,7 +55,7 @@ sub _db_exists {
 sub _create_db {
   my ($self) = @_;
   my $db = $self->database();
-  $self->dbc()->do("create database `$db`");
+  $self->target_dbc()->do("create database `$db`");
   return;
 }
 
@@ -111,7 +111,7 @@ sub _load_data_file {
 
   my $force_escape = q{FIELDS ESCAPED BY '\\\\'};
   my $sql = qq|LOAD DATA LOCAL INFILE '${target_file}' INTO TABLE `${table}` ${force_escape}|;
-  $self->dbc()->do($sql);
+  $self->target_dbc()->do($sql);
 
   $self->_enable_indexes($table);
   $self->_analyze_table($table);
@@ -188,19 +188,19 @@ sub _dump_files {
 
 sub _disable_indexes {
   my ($self, $table) = @_;
-  $self->dbc()->do("alter table `${table}` disable keys");
+  $self->target_dbc()->do("alter table `${table}` disable keys");
   return;
 }
 
 sub _enable_indexes {
   my ($self, $table) = @_;
-  $self->dbc()->do("alter table `${table}` enable keys");
+  $self->target_dbc()->do("alter table `${table}` enable keys");
   return;
 }
 
 sub _analyze_table {
   my ($self, $table) = @_;
-  $self->dbc()->do("analyze table `${table}`");
+  $self->target_dbc()->do("analyze table `${table}`");
   return;
 }
 

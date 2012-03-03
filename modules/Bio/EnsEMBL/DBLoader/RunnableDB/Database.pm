@@ -7,21 +7,21 @@ use Bio::EnsEMBL::DBSQL::DBConnection;
 
 sub sql_helper {
   my ($self) = @_;
-  return $self->dbc()->sql_helper();
+  return $self->target_dbc()->sql_helper();
 }
 
-sub dbc {
+sub target_dbc {
   my ($self) = @_;
-  return $self->param('dbc') if $self->param('dbc');
+  return $self->param('target_dbc') if $self->param('target_dbc');
   my $details = $self->param('target_db');
   my $dbc = Bio::EnsEMBL::DBSQL::DBConnection->new(%{$details}, -reconnect_if_lost => 1);
-  return $self->param('dbc', $dbc);
+  return $self->param('target_dbc', $dbc);
 }
 
 sub switch_db {
   my ($self, $db) = @_;
-  $self->dbc()->disconnect_if_idle();
-  $self->dbc()->dbname($db);
+  $self->target_dbc()->disconnect_if_idle();
+  $self->target_dbc()->dbname($db);
   return;
 }
 
@@ -53,7 +53,7 @@ sub is_view {
 
 sub run_mysql_cmd {
   my ($self, $sql) = @_;
-  my $dbc = $self->dbc();
+  my $dbc = $self->target_dbc();
   my $mysql_login_args = $self->get_mysql_opts();
   my $database = $self->database();
   my ($fh, $filename) = tempfile();
@@ -66,7 +66,7 @@ sub run_mysql_cmd {
 
 sub get_mysql_opts {
   my ($self) = @_;
-  my $dbc = $self->dbc();
+  my $dbc = $self->target_dbc();
   my %args = ( host => $dbc->host(), port => $dbc->port(), user => $dbc->username());
   $args{password} = $dbc->password() if $dbc->password();
   #Turns the above into --host=localhost --port=3306
