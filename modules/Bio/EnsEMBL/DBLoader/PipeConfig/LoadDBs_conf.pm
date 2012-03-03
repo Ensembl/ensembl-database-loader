@@ -137,8 +137,7 @@ sub pipeline_analyses {
       -parameters => { target_db => $self->o('target_db') },
       -hive_capacity => 1,
       -failed_job_tolerance => 100,
-      -can_be_empty => 1,
-      -flow_into => { 2 => [qw/grant/] }
+      -can_be_empty => 1
     },
 
     {
@@ -149,20 +148,8 @@ sub pipeline_analyses {
       -wait_for => [qw/prioritise high_priority_load_files/],
       -retry_count => 1,
       -failed_job_tolerance => 50,
-      -can_be_empty => 1,
-      -flow_into => { 1 => [qw/grant/] }
-    },
-    
-    {
-      -logic_name => 'grant',
-      -module => 'Bio::EnsEMBL::DBLoader::RunnableDB::Grant',
-      -parameters => { target_db => $self->o('target_db') },
-      -hive_capacity => 1,
-      -wait_for => [qw/prioritise high_priority_load_files/],
-      -retry_count => 1,
-      -failed_job_tolerance => 50,
-      -can_be_empty => 1,
-    },
+      -can_be_empty => 1
+    }
   ];
 }
 
