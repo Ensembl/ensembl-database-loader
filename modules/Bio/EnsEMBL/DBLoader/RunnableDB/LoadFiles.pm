@@ -16,7 +16,7 @@ use File::Spec;
 sub fetch_input {
   my ($self) = @_;
   my $local_dir = $self->local_dir();
-  my $sql_filename = sprintf('%s.sql.gz', $self->_database());
+  my $sql_filename = sprintf('%s.sql.gz', $self->database());
   $self->param('sql_filename', $sql_filename);
   return;
 }
