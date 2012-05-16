@@ -8,7 +8,6 @@ use Bio::EnsEMBL::Utils::Exception qw/throw/;
 use Bio::EnsEMBL::Utils::Scalar qw/wrap_array/;
 use Cwd;
 use IO::File;
-use IO::Scalar;
 use IO::Uncompress::Gunzip qw(gunzip $GunzipError);
 use File::Spec;
 
@@ -137,19 +136,17 @@ sub _gunzip_file {
 
 sub _filter_file {
   my ($self, $input_file, $filter, $alter) = @_;
-  my $output;
-  my $output_fh = IO::Scalar->new(\$output);
+  my $output = q{};
   my $found_lines = 0;
   open (my $input_fh, '<', $input_file) or throw "Cannot open file $input_file: $!";
   while( my $line = <$input_fh>) {
     if($filter->($line)) {
       $found_lines = 1;
       $line = $alter->($line) if defined $alter;
-      print $output_fh $line;
+      $output .= $line;
     }
   }
   close $input_fh;
-  close $output_fh;
   return $output;
 }
 
