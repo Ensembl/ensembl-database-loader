@@ -25,7 +25,11 @@ sub run {
   my $cwd = cwd();
 
   if($self->_db_exists()) {
-    throw "The database already exists. Remove and retry";
+    if($self->input_job()->retry_count() == 0) {
+      throw "Cannot continue. The database '$db' already exists and we are on our first attempt at loading";
+    }
+    print STDERR "Removing the database '$db' as it already exists\n" if $self->debug();
+    $self->_remove_db();
   }
   $self->_create_db();
   $self->switch_db($self->database());
@@ -48,6 +52,13 @@ sub run {
 sub _db_exists {
   my ($self) = @_;
   return ($self->db_hash()->{$self->database()}) ? 1 : 0;
+}
+
+sub _remove_db {
+  my ($self) = @_;
+  my $db = $self->database();
+  $self->target_dbc()->do("drop database `$db`");
+  return;
 }
 
 sub _create_db {

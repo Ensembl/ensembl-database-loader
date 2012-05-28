@@ -6,7 +6,7 @@ use base qw/Bio::EnsEMBL::DBLoader::RunnableDB::Base/;
 
 use Bio::EnsEMBL::Utils::Exception qw/throw/;
 use Cwd;
-use File::Path qw/mkpath/;
+use File::Path qw/mkpath rmtree/;
 use File::Spec;
 
 sub fetch_input {
@@ -68,7 +68,10 @@ sub _create_local_dir {
   my ($self, @dirs) = @_;
   my $target = $self->local_dir(@dirs);
   if(-d $target) {
-    throw "Cannot create the directory '${target}' as it already exists. Remove and rerun";
+    if($self->input_job()->retry_count() == 0) {
+      throw "Cannot create the directory '${target}' as it already exists. Remove and rerun";
+    }
+    rmtree($target);
   }
   mkpath($target);
   return;
