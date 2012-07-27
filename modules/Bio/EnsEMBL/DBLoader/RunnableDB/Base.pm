@@ -33,9 +33,10 @@ sub base_ftp_path {
   my ($self) = @_;
   my $release = $self->param('release');
   my $division = $self->param('division');
-  my @path = ('/', 'pub', "release-${release}");
+  my @path = ('', 'pub', "release-${release}");
   push(@path, $division) if $division;
-  return \@path
+  push(@path, 'mysql');
+  return join(q{/},@path);
 }
 
 sub cwd_ftp_dir {
@@ -76,9 +77,7 @@ sub cwd_local_dir {
 
 sub local_dir {
   my ($self, @dirs) = @_;
-  my $directory = $self->param('directory');
-  my ($type, $target_name) = ($directory->[-2], $directory->[-1]);
-  my $target = File::Spec->catdir($self->param('work_directory'), $type, $target_name, @dirs);
+  my $target = File::Spec->catdir($self->param('work_directory'), @dirs);
   return $target;
 }
 

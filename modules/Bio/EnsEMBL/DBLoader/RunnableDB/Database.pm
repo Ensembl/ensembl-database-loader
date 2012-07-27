@@ -28,7 +28,7 @@ sub switch_db {
 
 sub database {
   my ($self) = @_;
-  return $self->param('directory')->[-1];
+  return $self->param('database');
 }
 
 sub db_hash {

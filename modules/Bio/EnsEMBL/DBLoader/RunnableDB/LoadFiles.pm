@@ -23,7 +23,7 @@ sub run {
   my ($self) = @_;
 
   my $cwd = cwd();
-
+  my $db = $self->database();
   if($self->_db_exists()) {
     if($self->input_job()->retry_count() == 0) {
       throw "Cannot continue. The database '$db' already exists and we are on our first attempt at loading";
@@ -33,7 +33,7 @@ sub run {
   }
   $self->_create_db();
   $self->switch_db($self->database());
-  chdir($self->local_dir()) or throw 'Cannot change to '.$self->local_dir();
+  chdir($self->local_dir($db)) or throw 'Cannot change to '.$self->local_dir($db);
 
   $self->_load_sql();
   my %files = $self->_dump_files();

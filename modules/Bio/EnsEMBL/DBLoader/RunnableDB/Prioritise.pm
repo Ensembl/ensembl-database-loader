@@ -14,30 +14,21 @@ sub param_defaults {
 sub run {
   my ($self) = @_;
 
-  my $directory = $self->param('directory');
-  my $db_name = $directory->[-1];
-  my $class = $directory->[-2];
-
-  if($class eq 'data_files'){
-    my $path = join(q{/}, @{$directory});
-    $self->warning("The directory $path contains 'data_files'; will no longer continue to load into a database");
-    return;
-  }
-
+  my $database = $self->param('database');
   my $priority = 0;
 
   foreach my $species (@{$self->param('priority')->{species}}) {
-    if($db_name =~ /^$species/xms) {
-      $priority = 1;
-      $self->warning("DB name ${db_name} matched the prioritised species ${species}");
+    if($database =~ /^$species/xms) {
+      $priority++;
+      $self->warning("DB name ${database} matched the prioritised species ${species}");
       last;
     }
   }
   if(!$priority) {
     foreach my $group (@{$self->param('priority')->{group}}) {
-      if($db_name =~ /_${group}_/xms) {
-        $priority = 1;
-        $self->warning("DB name ${db_name} matched the prioritised group ${group}");
+      if($database =~ /_${group}_/xms) {
+        $priority++;
+        $self->warning("DB name ${database} matched the prioritised group ${group}");
         last;
       }
     }
@@ -50,8 +41,13 @@ sub run {
 
 sub write_output {
   my ($self) = @_;
-  my $dataflow = $self->param('priority') ? 2 : 3;
-  $self->dataflow_output_id({ directory => $self->param('directory') }, $dataflow);
+  my $priority_to_flow = {
+    0 => 2, #basic flow
+    1 => 3, #higher
+    2 => 4, #highest
+  };
+  my $dataflow = $priority_to_flow->{$self->param('priority')};
+  $self->dataflow_output_id({ database => $self->param('database') }, $dataflow);
   return;
 }
 
