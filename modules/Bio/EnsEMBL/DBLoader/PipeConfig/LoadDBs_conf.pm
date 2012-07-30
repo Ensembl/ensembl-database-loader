@@ -16,7 +16,7 @@ sub default_options {
     ftp_host => 'ftp.ensembl.org',
     ftp_port => 21,
     ftp_user => 'anonymous',
-#    ftp_pass => ''
+#    ftp_pass => '',
 
     #Required DBs; leave blank for all DBs
     databases => [],

@@ -6,7 +6,7 @@ h1. Installing
 
 This pipeline requires:
 
-* A checkout of Ensembl core and hive (v55 minimum)
+* A checkout of Ensembl core and hive (v68 minimum)
 ** Please see http://www.ensembl.org/info/docs/eHive/installation.html
 ** The ENSEMBL_CVS_ROOT_DIR environment variable set to the checkout directory
 * BioPerl 1.2.3
@@ -28,13 +28,7 @@ h2. Selecting your databases & versions
 
 By default the pipeline will load the API version of the core API you are using. If you want a full mirror than you can specify a different version using the <code>-release</code> command line argument.
 
-If a subset of databases is required then create a file with one database per line and give this to the program using the <code>-required_dbs_file</code> parameter. For example to load a portion of human databases
-
-<pre>
-homo_sapiens_core_64_37
-homo_sapiens_rnaseq_64_37
-homo_sapiens_vega_64_37
-</pre>
+If a subset of databases is required then specify each one using the <code>-databases</code> flag when initalising the pipeline 
 
 h2. Working with Ensembl Genomes
 
@@ -85,7 +79,8 @@ h3. Current Checked-out API Release
 <pre>
 usr@srv $ cd $ENSEMBL_CVS_ROOT_DIR/ensembl-database-loader
 usr@srv $ init_pipeline.pl Bio::EnsEMBL::DBLoader::PipeConfig::LoadDBs_conf \
-  -target_db_host $DB_HOST -target_db_port $DB_PORT -target_db_user $DB_USER -target_db_pass $DB_PASS 
+  -target_db_host $DB_HOST -target_db_port $DB_PORT -target_db_user $DB_USER -target_db_pass $DB_PASS  \
+  -ftp_pass $FTP_PASS
 </pre>
 
 h3. Version Specific Databases
@@ -94,7 +89,7 @@ h3. Version Specific Databases
 usr@srv $ cd $ENSEMBL_CVS_ROOT_DIR/ensembl-database-loader
 usr@srv $ init_pipeline.pl Bio::EnsEMBL::DBLoader::PipeConfig::LoadDBs_conf \
   -target_db_host $DB_HOST -target_db_port $DB_PORT -target_db_user $DB_USER -target_db_pass $DB_PASS \
-  -release 64
+  -ftp_pass $FTP_PASS -release 64
 </pre>
 
 h3. Ensembl Genomes Databases
@@ -103,17 +98,19 @@ h3. Ensembl Genomes Databases
 usr@srv $ cd $ENSEMBL_CVS_ROOT_DIR/ensembl-database-loader
 usr@srv $ init_pipeline.pl Bio::EnsEMBL::DBLoader::PipeConfig::LoadDBs_conf \
   -target_db_host $DB_HOST -target_db_port $DB_PORT -target_db_user $DB_USER -target_db_pass $DB_PASS \
+  -ftp_pass $FTP_PASS \
   -division metazoa \
   -release 10
 </pre>
 
-h3. List of Databases
+h3. Load a subset of Databases
 
 <pre>
 usr@srv $ cd $ENSEMBL_CVS_ROOT_DIR/ensembl-database-loader
 usr@srv $ init_pipeline.pl Bio::EnsEMBL::DBLoader::PipeConfig::LoadDBs_conf \
   -target_db_host $DB_HOST -target_db_port $DB_PORT -target_db_user $DB_USER -target_db_pass $DB_PASS \
-  -required_dbs_file my.dbs
+  -ftp_pass $FTP_PASS \
+  -databases saccharomyces_cerevisiae_core_66_4 -databases snp_mart_64
 </pre>
 
 h2. Running the Pipeline
