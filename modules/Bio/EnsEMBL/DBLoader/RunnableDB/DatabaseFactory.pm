@@ -5,7 +5,6 @@ use warnings;
 use base qw/Bio::EnsEMBL::Hive::RunnableDB::JobFactory Bio::EnsEMBL::DBLoader::RunnableDB::Base/;
 
 use Bio::EnsEMBL::Utils::Exception qw/throw/;
-use Bio::EnsEMBL::Utils::Scalar qw/scope_guard/;
 
 my %allowed_modes = map { $_ => 1 } qw/mart ensembl all/;
 my %filters = (
@@ -75,13 +74,12 @@ sub fetch_input {
 
 sub dirs {
   my ($self) = @_;
-  my $ftp = $self->connect_ftp();
-  my $guard = scope_guard(sub { $self->disconnect_ftp(); });
-  
+  my $ftp = $self->connect_ftp();  
   my $base_directory = $self->base_ftp_path();
   $self->cwd_ftp_dir($base_directory);
-  
   my $ls = $self->ls_ftp_cwd();
+  $self->disconnect_ftp();
+  
   my $dirs = $ls->{dirs};
   my $filter = $filters{$self->param('mode')};
   my @ok_dirs;
