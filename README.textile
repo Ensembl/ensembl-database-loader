@@ -11,7 +11,7 @@ This pipeline requires:
 ** The ENSEMBL_CVS_ROOT_DIR environment variable set to the checkout directory
 * BioPerl 1.2.3
 * A database for hive
-** SQLite is preferred but MySQL can be configured
+** MySQL
 * A MySQL database server (5.1 minimum) for Ensembl
 * Perl dependencies
 ** Perl 5.8.9 (minimum)
@@ -19,6 +19,8 @@ This pipeline requires:
 ** File::Spec
 ** IO::File
 ** IO::Uncompress::Gzip
+** DBI
+** DBD::MySQL
 * Binary dependencies
 ** mysql binary
 
@@ -65,12 +67,24 @@ h4. Database and FTP Params
 To make the guide easier we will export the settings for the target database. This is not a requirement but means you should be able to copy paste examples from this document out.
 
 <pre>
+export ENSADMIN_PSW='mypass'
+
 FTP_PASS='my@email.com'
 DB_HOST='host.mysql'
 DB_PORT=3306
 DB_USER='user'
 DB_PASS='password'
+
+PIPELINE_HOST='my-host'
+PIPELINE_PORT=3306
+PIPELINE_USER='user'
 </pre>
+
+You should notice the lack of a PIPELINE_PASS parameter or PIPELINE_DBNAME; the
+first is handled by hive via the ENSADMIN_PSW export and the second is
+automatically generated from your username and the pipeline name. If your user
+name is wibble and we are loading Ensembl 68 databases then your database 
+name will be *wibble_ensembl_mirror_68*.
 
 h2. Example Setups 
 
