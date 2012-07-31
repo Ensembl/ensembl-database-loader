@@ -45,15 +45,15 @@ sub default_options {
       -pass => $self->o('target_db_pass')
     },
 
-    #Setting the Hive DB which we will use SQLite for
-    pipeline_db => {
-      -driver => 'sqlite',
-      -dbname => $self->o('pipeline_name'),
-      -host   => '',
-      -port   => '',
-      -user   => '',
-      -pass   => '',
-    },
+#    #Setting the Hive DB which we will use SQLite for
+#    pipeline_db => {
+#      -driver => 'sqlite',
+#      -dbname => $self->o('pipeline_name'),
+#      -host   => '',
+#      -port   => '',
+#      -user   => '',
+#      -pass   => '',
+#    },
 
     #Priority listing
     priority => {
