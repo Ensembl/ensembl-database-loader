@@ -19,10 +19,9 @@ my %filters = (
   all => sub {
     my ($self, $dir) = @_;
     my $databases = $self->param('databases');
-    if($databases) {
+    if($databases && ref($databases) eq 'ARRAY' && @{$databases}) {
       my %lookup = map { $_ => 1 } @{$databases};
       if($lookup{$dir}) {
-        $DB::single=1;;
         $self->param('hardcoded_db_hits')->{$dir} = 1;
         return 1;
       } 
@@ -84,9 +83,13 @@ sub dirs {
   my $filter = $filters{$self->param('mode')};
   my @ok_dirs;
   foreach my $dir (@{$dirs}) {
+    printf STDERR "Processing '%s'\n", $dir if $self->debug();
+    my $state = 'rejected';
     if($filter->($self, $dir)) {
+      $state = 'accepted';
       push(@ok_dirs, $dir);
     }
+    printf STDERR "'%s' has been %s\n", $dir, $state if $self->debug();
   }
   return \@ok_dirs;
 }
