@@ -45,16 +45,6 @@ sub default_options {
       -pass => $self->o('target_db_pass')
     },
 
-#    #Setting the Hive DB which we will use SQLite for
-#    pipeline_db => {
-#      -driver => 'sqlite',
-#      -dbname => $self->o('pipeline_name'),
-#      -host   => '',
-#      -port   => '',
-#      -user   => '',
-#      -pass   => '',
-#    },
-
     #Priority listing
     priority => {
       species => [qw/homo_sapiens mus_musculus danio_rerio/],
@@ -79,6 +69,7 @@ sub pipeline_analyses {
         mode => $self->o('mode'),
         column_names => ['database'],
         fan_branch_code => 2,
+        randomize => 1,
       },
       -input_ids => [{}],
       -flow_into => { 2 => [qw/download/] },
