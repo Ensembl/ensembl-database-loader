@@ -61,7 +61,7 @@ sub run_mysql_cmd {
   print $fh $sql;
   close $fh;
   system("mysql $mysql_login_args $database < $filename")
-    and throw("Cannot issue $sql to mysql and DB ${database}: $!");
+    and $self->throw("Cannot issue $sql to mysql and DB ${database}: $!");
   return;
 }
 
