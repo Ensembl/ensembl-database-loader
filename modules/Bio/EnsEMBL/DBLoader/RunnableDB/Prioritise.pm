@@ -24,13 +24,11 @@ sub run {
       last;
     }
   }
-  if(!$priority) {
-    foreach my $group (@{$self->param('priority')->{group}}) {
-      if($database =~ /_${group}_/xms) {
-        $priority++;
-        $self->warning("DB name ${database} matched the prioritised group ${group}");
-        last;
-      }
+  foreach my $group (@{$self->param('priority')->{group}}) {
+    if($database =~ /_${group}_/xms) {
+      $priority++;
+      $self->warning("DB name ${database} matched the prioritised group ${group}");
+      last;
     }
   }
 
