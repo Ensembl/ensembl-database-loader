@@ -98,6 +98,7 @@ sub pipeline_analyses {
         5 => ['human_variation_load_files']
       },
       -hive_capacity => -1,
+      -wait_for => [qw/download/],
     },
     
     {
