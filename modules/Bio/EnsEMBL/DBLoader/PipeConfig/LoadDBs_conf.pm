@@ -9,7 +9,7 @@ use Bio::EnsEMBL::ApiVersion;
 sub default_options {
   my ($self) = @_;
   my $parent_options = $self->SUPER::default_options();
-  return {
+  my $options = {
     %{$parent_options},
 
     #FTP Settings
@@ -35,7 +35,7 @@ sub default_options {
     #work_directory => '',
 
     #Automatically set name
-    pipeline_name => 'mirror_ensembl_'.$self->o('release'),
+    pipeline_name => 'mirror_ensembl_'.$self->o('mode').'_'.$self->o('release'),
 
     #Target DB
     target_db => {
@@ -51,6 +51,7 @@ sub default_options {
       group => [qw/core variation/],
     }
   };
+  return $options;
 }
 
 #1 job - Figure out if we want all DBs or a subset
