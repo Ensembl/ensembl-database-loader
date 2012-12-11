@@ -90,9 +90,19 @@ sub pipeline_analyses {
       -flow_into => { 
         2 => ['load_files'], 
         3 => ['high_priority_load_files'], 
-        4 => ['super_priority_load_files']
+        4 => ['super_priority_load_files'],
+        5 => ['human_variation_load_files']
       },
       -hive_capacity => -1,
+    },
+    
+    {
+      -logic_name => 'human_variation_load_files',
+      -module => 'Bio::EnsEMBL::DBLoader::RunnableDB::LoadFiles',
+      -parameters => { target_db => $self->o('target_db') },
+      -hive_capacity => 1,
+      -failed_job_tolerance => 100,
+      -can_be_empty => 1
     },
 
     {
@@ -119,7 +129,7 @@ sub pipeline_analyses {
       -module => 'Bio::EnsEMBL::DBLoader::RunnableDB::LoadFiles',
       -parameters => { target_db => $self->o('target_db') },
       -hive_capacity => 2,
-      -wait_for => [qw/prioritise high_priority_load_files/],
+      -wait_for => [qw/prioritise high_priority_load_files human_variation_load_files/],
       -retry_count => 1,
       -failed_job_tolerance => 50,
       -can_be_empty => 1

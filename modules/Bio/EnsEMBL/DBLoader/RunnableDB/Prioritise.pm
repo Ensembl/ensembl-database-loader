@@ -31,10 +31,19 @@ sub run {
       last;
     }
   }
-
+  
+  $priority = $self->prioritise_human_variation($database, $priority);
   $self->param('priority', $priority);
 
   return;
+}
+
+sub prioritise_human_variation {
+  my ($self, $database, $priority) = @_;
+  if($database =~ /^homo_sapiens/ && $database =~ /_core_/) {
+    $priority++;
+  }
+  return $priority;
 }
 
 sub write_output {
@@ -43,6 +52,7 @@ sub write_output {
     0 => 2, #basic flow
     1 => 3, #higher
     2 => 4, #highest
+    3 => 5, #special human variation
   };
   my $dataflow = $priority_to_flow->{$self->param('priority')};
   $self->dataflow_output_id({ database => $self->param('database') }, $dataflow);
