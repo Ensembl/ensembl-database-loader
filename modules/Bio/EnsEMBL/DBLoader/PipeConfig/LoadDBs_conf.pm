@@ -64,6 +64,7 @@ sub pipeline_analyses {
     {
       -logic_name => 'find_dbs',
       -module => 'Bio::EnsEMBL::DBLoader::RunnableDB::DatabaseFactory',
+      -meadow_type=> 'LOCAL',
       -parameters => {
         databases => $self->o('databases'),
         mode => $self->o('mode'),
@@ -79,13 +80,15 @@ sub pipeline_analyses {
       -logic_name => 'download',
       -module => 'Bio::EnsEMBL::DBLoader::RunnableDB::DownloadDatabase',
       -flow_into => { 1 => [qw/prioritise/] },
-      -hive_capacity => 5,
+      -hive_capacity => -1,
+      -analysis_capacity => 5,
       -failed_job_tolerance => 10,
     },
 
     {
       -logic_name => 'prioritise',
       -module => 'Bio::EnsEMBL::DBLoader::RunnableDB::Prioritise',
+      -meadow_type=> 'LOCAL',
       -parameters => { priority => $self->o('priority') },
       -flow_into => { 
         2 => ['load_files'], 
@@ -100,7 +103,7 @@ sub pipeline_analyses {
       -logic_name => 'human_variation_load_files',
       -module => 'Bio::EnsEMBL::DBLoader::RunnableDB::LoadFiles',
       -parameters => { target_db => $self->o('target_db') },
-      -hive_capacity => 1,
+      -hive_capacity => -1,
       -failed_job_tolerance => 100,
       -can_be_empty => 1
     },
@@ -109,7 +112,8 @@ sub pipeline_analyses {
       -logic_name => 'super_priority_load_files',
       -module => 'Bio::EnsEMBL::DBLoader::RunnableDB::LoadFiles',
       -parameters => { target_db => $self->o('target_db') },
-      -hive_capacity => 2,
+      -hive_capacity => -1,
+      -analysis_capacity => 2,
       -failed_job_tolerance => 100,
       -can_be_empty => 1
     },
@@ -118,7 +122,8 @@ sub pipeline_analyses {
       -logic_name => 'high_priority_load_files',
       -module => 'Bio::EnsEMBL::DBLoader::RunnableDB::LoadFiles',
       -parameters => { target_db => $self->o('target_db') },
-      -hive_capacity => 2,
+      -hive_capacity => -1,
+      -analysis_capacity => 2,
       -failed_job_tolerance => 100,
       -wait_for => [qw/prioritise super_priority_load_files/],
       -can_be_empty => 1
@@ -128,7 +133,8 @@ sub pipeline_analyses {
       -logic_name => 'load_files',
       -module => 'Bio::EnsEMBL::DBLoader::RunnableDB::LoadFiles',
       -parameters => { target_db => $self->o('target_db') },
-      -hive_capacity => 2,
+      -hive_capacity => -1,
+      -analysis_capacity => 2,
       -wait_for => [qw/prioritise high_priority_load_files human_variation_load_files/],
       -retry_count => 1,
       -failed_job_tolerance => 50,
