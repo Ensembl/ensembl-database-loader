@@ -22,6 +22,10 @@ sub fetch_input {
 
 sub run {
   my ($self) = @_;
+  
+  #Disconnect from the hive since we are going to be doing a lot of
+  #FTP and file system intensive jobs
+  $self->dbc()->disconnect_if_idle();
 
   $self->_create_local_dir(0);
   my $cwd = cwd();
