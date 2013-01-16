@@ -24,7 +24,6 @@ sub default_options {
     #Mode; sets what we load. Defaults to all but ensembl & mart are available
     mode => 'all',
     
-
     #Set to the actual release or the current which
     release => software_version(),
 
@@ -63,6 +62,7 @@ sub pipeline_analyses {
   my ($self) = @_;
   return [
     {
+	  -meadow_type=> 'LSF',
       -logic_name => 'find_dbs',
       -module => 'Bio::EnsEMBL::DBLoader::RunnableDB::DatabaseFactory',
       -meadow_type=> 'LOCAL',
@@ -78,6 +78,7 @@ sub pipeline_analyses {
     },
 
     {
+	  -meadow_type=> 'LSF',
       -logic_name => 'download',
       -module => 'Bio::EnsEMBL::DBLoader::RunnableDB::DownloadDatabase',
       -flow_into => { 1 => [qw/prioritise/] },
@@ -95,11 +96,11 @@ sub pipeline_analyses {
         3 => ['high_priority_load_files'], 
         4 => ['super_priority_load_files'],
         5 => ['human_variation_load_files']
-      },
-      -wait_for => [qw/download/],
+      }
     },
     
     {
+	  -meadow_type=> 'LSF',
       -logic_name => 'human_variation_load_files',
       -module => 'Bio::EnsEMBL::DBLoader::RunnableDB::LoadFiles',
       -parameters => { target_db => $self->o('target_db') },
@@ -108,6 +109,7 @@ sub pipeline_analyses {
     },
 
     {
+	  -meadow_type=> 'LSF',
       -logic_name => 'super_priority_load_files',
       -module => 'Bio::EnsEMBL::DBLoader::RunnableDB::LoadFiles',
       -parameters => { target_db => $self->o('target_db') },
@@ -117,6 +119,7 @@ sub pipeline_analyses {
     },
     
     {
+	  -meadow_type=> 'LSF',
       -logic_name => 'high_priority_load_files',
       -module => 'Bio::EnsEMBL::DBLoader::RunnableDB::LoadFiles',
       -parameters => { target_db => $self->o('target_db') },
@@ -127,6 +130,7 @@ sub pipeline_analyses {
     },
 
     {
+	  -meadow_type=> 'LSF',
       -logic_name => 'load_files',
       -module => 'Bio::EnsEMBL::DBLoader::RunnableDB::LoadFiles',
       -parameters => { target_db => $self->o('target_db') },
