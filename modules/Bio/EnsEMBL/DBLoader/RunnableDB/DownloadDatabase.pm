@@ -17,6 +17,7 @@ sub fetch_input {
   my ($self) = @_;
   throw 'No work_directory has been given' unless $self->param('work_directory');
   throw 'No database has been given' unless $self->param('database');
+  $self->SUPER::fetch_input();
   return;
 }
 

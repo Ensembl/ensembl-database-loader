@@ -5,6 +5,7 @@ use warnings;
 use base qw/Bio::EnsEMBL::Hive::RunnableDB::JobFactory Bio::EnsEMBL::DBLoader::RunnableDB::Base/;
 
 use Bio::EnsEMBL::Utils::Exception qw/throw/;
+use File::Find;
 
 my %allowed_modes = map { $_ => 1 } qw/mart ensembl all/;
 my %filters = (
@@ -36,11 +37,15 @@ sub param_defaults {
   return {
     mode => 'all',
     hardcoded_db_hits => {},
+    use_existing_files => 0,
   };
 }
 
 sub fetch_input {
   my ($self) = @_;
+
+  Bio::EnsEMBL::DBLoader::RunnableDB::Base::fetch_input($self);
+
   my $mode = $self->param('mode') || q{};
   if(! exists $allowed_modes{$mode}) {
     my $join = join(q{, }, sort keys %allowed_modes);
@@ -73,13 +78,13 @@ sub fetch_input {
 
 sub dirs {
   my ($self) = @_;
-  my $ftp = $self->connect_ftp();  
-  my $base_directory = $self->base_ftp_path();
-  $self->cwd_ftp_dir($base_directory);
-  my $ls = $self->ls_ftp_cwd();
-  $self->disconnect_ftp();
-  
-  my $dirs = $ls->{dirs};
+  my $dirs;
+  if($self->param('use_existing_files')) {
+    $dirs = $self->_local_dirs();
+  }
+  else {
+    $dirs = $self->_ftp_dirs();
+  }
   my $filter = $filters{$self->param('mode')};
   my @ok_dirs;
   foreach my $dir (@{$dirs}) {
@@ -92,6 +97,27 @@ sub dirs {
     printf STDERR "'%s' has been %s\n", $dir, $state if $self->debug();
   }
   return \@ok_dirs;
+}
+
+sub _local_dirs {
+  my ($self) = @_;
+  my $work_dir = $self->local_dir();
+  throw "$work_dir does not exist" if ! -d $work_dir;
+  opendir(my $dh, $work_dir) or throw "Cannot open $work_dir for directory listing: $!";
+  my @dirs = grep { $_ !~ /^\./ && -d "$work_dir/$_" } readdir($dh);
+  close $dh;
+  return \@dirs;
+}
+
+sub _ftp_dirs {
+  my ($self) = @_;
+  my $ftp = $self->connect_ftp();  
+  my $base_directory = $self->base_ftp_path();
+  $self->cwd_ftp_dir($base_directory);
+  my $ls = $self->ls_ftp_cwd();
+  $self->disconnect_ftp();
+  my $dirs = $ls->{dirs};
+  return $dirs;
 }
 
 sub assert_hardcoded_dbs {

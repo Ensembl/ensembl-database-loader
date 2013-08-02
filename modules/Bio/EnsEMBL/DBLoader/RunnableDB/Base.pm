@@ -11,6 +11,14 @@ use Net::FTP;
 
 #FTP ops
 
+sub fetch_input {
+  my ($self) = @_;
+  my $work_directory = $self->param('work_directory');
+  $work_directory = File::Spec->rel2abs($work_directory);
+  $self->param('work_directory', $work_directory);
+  return;
+}
+
 sub connect_ftp {
   my ($self) = @_;
   my ($server, $port, $user, $pass) = (map { $self->param("ftp_${_}") } qw/host port user pass/);
@@ -70,7 +78,7 @@ sub ls_ftp_cwd {
 
 sub cwd_local_dir {
   my ($self, @dirs) = @_;
-  my $dir = File::Spec->catdir($self->local_dir(), @dirs);
+  my $dir = $self->local_dir(@dirs);
   chdir($dir) or throw "Cannot cd to '${dir}'";
   return;
 }
