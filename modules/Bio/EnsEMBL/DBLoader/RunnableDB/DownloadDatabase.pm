@@ -7,6 +7,7 @@ use warnings;
 use base qw/Bio::EnsEMBL::DBLoader::RunnableDB::Base/;
 
 use Bio::EnsEMBL::Utils::Exception qw/throw warning/;
+use Bio::EnsEMBL::Utils::Scalar qw/scope_guard/;
 use Cwd;
 use File::Path qw/mkpath rmtree/;
 use File::Spec;
@@ -27,20 +28,28 @@ sub run {
   #Disconnect from the hive since we are going to be doing a lot of
   #FTP and file system intensive jobs
   $self->dbc()->disconnect_if_idle();
-
   $self->_create_local_dir(0);
   my $cwd = cwd();
   $self->cwd_local_dir();
+  my $scope_guard = scope_guard(sub {
+    chdir($cwd) or throw "Cannot cd back to '$cwd'";
+  });
 
-  my $ftp = $self->connect_ftp();
-  my $directory = $self->base_ftp_path();
-  $self->cwd_ftp_dir($directory);
-  $self->download($ftp);
-  $self->disconnect_ftp();
+  #Only download from FTP if we are not reusing existing files.
+  #Means files retreived from other mechanisms are still checksummed
+  if($self->param('use_existing_files')) {
+    my $database = $self->param('database');
+    $self->cwd_local_dir($database);
+  }
+  else {
+    my $ftp = $self->connect_ftp();
+    my $directory = $self->base_ftp_path();
+    $self->cwd_ftp_dir($directory);
+    $self->download($ftp);
+    $self->disconnect_ftp();
+  }
   
   $self->checksum();
-
-  chdir($cwd) or throw "Cannot cd back to '$cwd'";
 
   return;
 }

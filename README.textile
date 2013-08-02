@@ -94,7 +94,8 @@ h3. Current Checked-out API Release
 usr@srv $ cd $ENSEMBL_CVS_ROOT_DIR/ensembl-database-loader
 usr@srv $ init_pipeline.pl Bio::EnsEMBL::DBLoader::PipeConfig::LoadDBs_conf \
   -target_db_host $DB_HOST -target_db_port $DB_PORT -target_db_user $DB_USER -target_db_pass $DB_PASS  \
-  -ftp_pass $FTP_PASS
+  -ftp_pass $FTP_PASS \
+  -work_directory /scratch/mywork
 </pre>
 
 h3. Version Specific Databases
@@ -103,7 +104,8 @@ h3. Version Specific Databases
 usr@srv $ cd $ENSEMBL_CVS_ROOT_DIR/ensembl-database-loader
 usr@srv $ init_pipeline.pl Bio::EnsEMBL::DBLoader::PipeConfig::LoadDBs_conf \
   -target_db_host $DB_HOST -target_db_port $DB_PORT -target_db_user $DB_USER -target_db_pass $DB_PASS \
-  -ftp_pass $FTP_PASS -release 64
+  -ftp_pass $FTP_PASS -release 64 \
+  -work_directory /scratch/mywork
 </pre>
 
 h3. Ensembl Genomes Databases
@@ -114,7 +116,8 @@ usr@srv $ init_pipeline.pl Bio::EnsEMBL::DBLoader::PipeConfig::LoadDBs_conf \
   -target_db_host $DB_HOST -target_db_port $DB_PORT -target_db_user $DB_USER -target_db_pass $DB_PASS \
   -ftp_pass $FTP_PASS \
   -division metazoa \
-  -release 10
+  -release 10 \
+  -work_directory /scratch/mywork
 </pre>
 
 h3. Load a subset of Databases
@@ -124,8 +127,20 @@ usr@srv $ cd $ENSEMBL_CVS_ROOT_DIR/ensembl-database-loader
 usr@srv $ init_pipeline.pl Bio::EnsEMBL::DBLoader::PipeConfig::LoadDBs_conf \
   -target_db_host $DB_HOST -target_db_port $DB_PORT -target_db_user $DB_USER -target_db_pass $DB_PASS \
   -ftp_pass $FTP_PASS \
-  -databases saccharomyces_cerevisiae_core_66_4 -databases snp_mart_64
+  -databases saccharomyces_cerevisiae_core_66_4 -databases snp_mart_64 \
+  -work_directory /scratch/mywork
 </pre>
+
+h3. Using files downloaded via another mechanism (assumes files and dirs are in work_directory)
+
+<pre>
+usr@srv $ cd $ENSEMBL_CVS_ROOT_DIR/ensembl-database-loader
+usr@srv $ init_pipeline.pl Bio::EnsEMBL::DBLoader::PipeConfig::LoadDBs_conf \
+  -target_db_host $DB_HOST -target_db_port $DB_PORT -target_db_user $DB_USER -target_db_pass $DB_PASS \
+  -use_existing_files 1 \
+  -work_directory /scratch/mywork
+</pre>
+
 
 h2. Running the Pipeline
 
