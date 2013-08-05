@@ -14,6 +14,12 @@ use File::Spec;
 use IO::Uncompress::Gunzip qw($GunzipError);
 use IO::File;
 
+sub default_params {
+  return {
+    rsync => 1,
+  };
+}
+
 sub fetch_input {
   my ($self) = @_;
   throw 'No work_directory has been given' unless $self->param('work_directory');
@@ -42,11 +48,7 @@ sub run {
     $self->cwd_local_dir($database);
   }
   else {
-    my $ftp = $self->connect_ftp();
-    my $directory = $self->base_ftp_path();
-    $self->cwd_ftp_dir($directory);
-    $self->download($ftp);
-    $self->disconnect_ftp();
+    $self->download();
   }
   
   $self->checksum();
@@ -55,7 +57,23 @@ sub run {
 }
 
 sub download {
-  my ($self, $ftp) = @_;
+  my ($self) = @_;
+  if($self->param('rsync')) {
+    if($self->_rsync_url()) {
+      $self->_rsync_download();
+      return;
+    }
+    print STDERR "Switching to FTP as the submitted host does not support rsync\n" if $self->debug();
+  }
+  $self->_ftp_download();
+  return;
+}
+
+sub _ftp_download {
+  my ($self) = @_;
+  my $ftp = $self->connect_ftp();
+  my $directory = $self->base_ftp_path();
+  $self->cwd_ftp_dir($directory);
   my $database = $self->param('database');
   $self->_create_local_dir(1, $database);
   $self->cwd_local_dir($database);
@@ -64,6 +82,26 @@ sub download {
   foreach my $file (@{$ls->{files}}) {
     $ftp->get($file) or throw "Cannot get the file $file from FTP ".$ftp->message();
   }
+  $self->disconnect_ftp();
+  return;
+}
+
+sub _rsync_download {
+  my ($self) = @_;
+  my $release = $self->param('release');
+  my $base_rsync_url = $self->_rsync_url();
+  my $database = $self->param('database');
+  my $rsync_url = "${base_rsync_url}/release-${release}/mysql/${database}";
+  my $verbose = ($self->debug()) ? '--verbose' : '--quiet';
+  my $cmd = "rsync --recursive $verbose $rsync_url .";
+  $self->_create_local_dir(0, $database);
+  print STDERR "Running: $cmd\n" if $self->debug();
+  system($cmd);
+  my $rc = $? >> 8;
+  if($rc != 0) {
+    $self->throw("Encountered a problem whilst downloading files for ${database}. Rsync command was '$cmd'");
+  }
+  $self->cwd_local_dir($database);
   return;
 }
 
@@ -165,6 +203,13 @@ sub _checksum_file {
   return $check;
 }
 
+sub _rsync_url {
+  my ($self) = @_;
+  if($self->param('ftp_host') eq 'ftp.ensembl.org') {
+    return 'rsync://ftp.ensembl.org/ensembl/pub';
+  }
+  return;
+}
 
 
 1;

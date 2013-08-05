@@ -18,6 +18,9 @@ sub default_options {
     ftp_user => 'anonymous',
     ftp_pass => '',
 
+    #rsync flag
+    rsync => 0,
+
     #Required DBs; leave blank for all DBs
     databases => [],
     
@@ -89,6 +92,7 @@ sub pipeline_analyses {
       -logic_name => 'download',
       -module => 'Bio::EnsEMBL::DBLoader::RunnableDB::DownloadDatabase',
       -flow_into => { 1 => [qw/prioritise/] },
+      -parameters => { rsync => $self->o('rsync') },
       -hive_capacity => 5,
       -failed_job_tolerance => 10,
     },

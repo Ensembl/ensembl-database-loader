@@ -141,6 +141,16 @@ usr@srv $ init_pipeline.pl Bio::EnsEMBL::DBLoader::PipeConfig::LoadDBs_conf \
   -work_directory /scratch/mywork
 </pre>
 
+h3. Using rsync for the transport protocol
+
+<pre>
+usr@srv $ cd $ENSEMBL_CVS_ROOT_DIR/ensembl-database-loader
+usr@srv $ init_pipeline.pl Bio::EnsEMBL::DBLoader::PipeConfig::LoadDBs_conf \
+  -target_db_host $DB_HOST -target_db_port $DB_PORT -target_db_user $DB_USER -target_db_pass $DB_PASS \
+  -rsync 1 \
+  -work_directory /scratch/mywork
+</pre>
+
 
 h2. Running the Pipeline
 
