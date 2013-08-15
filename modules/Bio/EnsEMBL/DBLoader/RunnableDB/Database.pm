@@ -13,7 +13,7 @@ sub sql_helper {
 
 sub target_dbc {
   my ($self) = @_;
-  return $self->param('target_dbc') if $self->param('target_dbc');
+  return $self->param('target_dbc') if $self->param_is_defined('target_dbc');
   my $details = $self->param('target_db');
   my $dbc = Bio::EnsEMBL::DBSQL::DBConnection->new(%{$details}, -reconnect_if_lost => 1);
   return $self->param('target_dbc', $dbc);

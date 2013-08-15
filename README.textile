@@ -95,6 +95,7 @@ usr@srv $ cd $ENSEMBL_CVS_ROOT_DIR/ensembl-database-loader
 usr@srv $ init_pipeline.pl Bio::EnsEMBL::DBLoader::PipeConfig::LoadDBs_conf \
   -target_db_host $DB_HOST -target_db_port $DB_PORT -target_db_user $DB_USER -target_db_pass $DB_PASS  \
   -ftp_pass $FTP_PASS \
+  -host $PIPELINE_HOST -pipeline_db -port=$PIPELINE_PORT -pipeline_db -user=$PIPELINE_USER \
   -work_directory /scratch/mywork
 </pre>
 
@@ -105,6 +106,7 @@ usr@srv $ cd $ENSEMBL_CVS_ROOT_DIR/ensembl-database-loader
 usr@srv $ init_pipeline.pl Bio::EnsEMBL::DBLoader::PipeConfig::LoadDBs_conf \
   -target_db_host $DB_HOST -target_db_port $DB_PORT -target_db_user $DB_USER -target_db_pass $DB_PASS \
   -ftp_pass $FTP_PASS -release 64 \
+  -host $PIPELINE_HOST -pipeline_db -port=$PIPELINE_PORT -pipeline_db -user=$PIPELINE_USER \
   -work_directory /scratch/mywork
 </pre>
 
@@ -117,6 +119,7 @@ usr@srv $ init_pipeline.pl Bio::EnsEMBL::DBLoader::PipeConfig::LoadDBs_conf \
   -ftp_pass $FTP_PASS \
   -division metazoa \
   -release 10 \
+  -host $PIPELINE_HOST -pipeline_db -port=$PIPELINE_PORT -pipeline_db -user=$PIPELINE_USER \
   -work_directory /scratch/mywork
 </pre>
 
@@ -128,6 +131,7 @@ usr@srv $ init_pipeline.pl Bio::EnsEMBL::DBLoader::PipeConfig::LoadDBs_conf \
   -target_db_host $DB_HOST -target_db_port $DB_PORT -target_db_user $DB_USER -target_db_pass $DB_PASS \
   -ftp_pass $FTP_PASS \
   -databases saccharomyces_cerevisiae_core_66_4 -databases snp_mart_64 \
+  -host $PIPELINE_HOST -pipeline_db -port=$PIPELINE_PORT -pipeline_db -user=$PIPELINE_USER \
   -work_directory /scratch/mywork
 </pre>
 
@@ -138,6 +142,7 @@ usr@srv $ cd $ENSEMBL_CVS_ROOT_DIR/ensembl-database-loader
 usr@srv $ init_pipeline.pl Bio::EnsEMBL::DBLoader::PipeConfig::LoadDBs_conf \
   -target_db_host $DB_HOST -target_db_port $DB_PORT -target_db_user $DB_USER -target_db_pass $DB_PASS \
   -use_existing_files 1 \
+  -host $PIPELINE_HOST -pipeline_db -port=$PIPELINE_PORT -pipeline_db -user=$PIPELINE_USER \
   -work_directory /scratch/mywork
 </pre>
 
@@ -148,6 +153,7 @@ usr@srv $ cd $ENSEMBL_CVS_ROOT_DIR/ensembl-database-loader
 usr@srv $ init_pipeline.pl Bio::EnsEMBL::DBLoader::PipeConfig::LoadDBs_conf \
   -target_db_host $DB_HOST -target_db_port $DB_PORT -target_db_user $DB_USER -target_db_pass $DB_PASS \
   -rsync 1 \
+  -host $PIPELINE_HOST -pipeline_db -port=$PIPELINE_PORT -pipeline_db -user=$PIPELINE_USER \
   -work_directory /scratch/mywork
 </pre>
 

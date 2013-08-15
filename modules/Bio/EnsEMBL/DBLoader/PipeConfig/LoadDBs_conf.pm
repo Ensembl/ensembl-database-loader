@@ -58,7 +58,10 @@ sub default_options {
     priority => {
       species => [qw/homo_sapiens mus_musculus danio_rerio/],
       group => [qw/core variation/],
-    }
+    },
+
+    #grant user
+    grant_user => 'anonymous',
   };
   return $options;
 }
@@ -116,7 +119,8 @@ sub pipeline_analyses {
       -module => 'Bio::EnsEMBL::DBLoader::RunnableDB::LoadFiles',
       -parameters => { target_db => $self->o('target_db') },
       -failed_job_tolerance => 100,
-      -can_be_empty => 1
+      -can_be_empty => 1,
+      -flow_into  => { 1 => {'grant' => { database => '#database#'}} },
     },
 
     {
@@ -126,7 +130,8 @@ sub pipeline_analyses {
       -parameters => { target_db => $self->o('target_db') },
       -hive_capacity => 2,
       -failed_job_tolerance => 100,
-      -can_be_empty => 1
+      -can_be_empty => 1,
+      -flow_into  => { 1 => {'grant' => { database => '#database#'}} },
     },
     
     {
@@ -137,7 +142,8 @@ sub pipeline_analyses {
       -hive_capacity => 2,
       -failed_job_tolerance => 100,
       -wait_for => [qw/prioritise super_priority_load_files/],
-      -can_be_empty => 1
+      -can_be_empty => 1,
+      -flow_into  => { 1 => {'grant' => { database => '#database#'}} },
     },
 
     {
@@ -149,8 +155,19 @@ sub pipeline_analyses {
       -wait_for => [qw/prioritise high_priority_load_files human_variation_load_files/],
       -retry_count => 1,
       -failed_job_tolerance => 50,
-      -can_be_empty => 1
-    }
+      -can_be_empty => 1,
+      -flow_into  => { 1 => {'grant' => { database => '#database#'}} },
+    },
+
+    {
+      -meadow_type=> 'LOCAL',
+      -logic_name => 'grant',
+      -module => 'Bio::EnsEMBL::DBLoader::RunnableDB::Grant',
+      -parameters => { target_db => $self->o('target_db') },
+      -retry_count => 0,
+      -can_be_empty => 1,
+      -flow_into => 'grant',
+    },
   ];
 }
 
