@@ -60,8 +60,8 @@ sub default_options {
       group => [qw/core variation/],
     },
 
-    #grant user
-    grant_user => 'anonymous',
+    #grant users
+    grant_users => [],
   };
   return $options;
 }
@@ -163,7 +163,10 @@ sub pipeline_analyses {
       -meadow_type=> 'LOCAL',
       -logic_name => 'grant',
       -module => 'Bio::EnsEMBL::DBLoader::RunnableDB::Grant',
-      -parameters => { target_db => $self->o('target_db'), grant_users => [qw/anonymous ensro/] },
+      -parameters => { 
+        target_db => $self->o('target_db'), 
+        user_submitted_grant_users => $self->o('grant_users'),
+      },
       -retry_count => 0,
       -can_be_empty => 1,
     },

@@ -57,7 +57,7 @@ sub run {
 	my ($self) = @_;
 	my $grant_template = q{GRANT SELECT, EXECUTE ON `%s`.* TO '%s'@'%%'};
 	my $database = $self->database();
-	my $grant_users = wrap_array($self->param('grant_users'));
+	my $grant_users = wrap_array($self->_get_users());
 	my @ddl;
 	foreach my $grant_user (@{$grant_users}) {
 		my $grant_ddl = sprintf($grant_template, $database, $grant_user);
@@ -75,6 +75,17 @@ sub write_output {
 	}
 	$self->target_dbc()->do('flush privileges');
 	return;
+}
+
+sub _get_users {
+	my ($self) = @_;
+	if($self->param_is_defined('user_submitted_grant_users')) {
+		my $grants = $self->param('user_submitted_grant_users');
+		if(@{$grants}) {
+			return $grants;
+		}
+	}
+	return $self->param('grant_users');
 }
 
 1;
