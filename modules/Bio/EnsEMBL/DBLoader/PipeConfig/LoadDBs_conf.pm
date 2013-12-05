@@ -163,10 +163,9 @@ sub pipeline_analyses {
       -meadow_type=> 'LOCAL',
       -logic_name => 'grant',
       -module => 'Bio::EnsEMBL::DBLoader::RunnableDB::Grant',
-      -parameters => { target_db => $self->o('target_db') },
+      -parameters => { target_db => $self->o('target_db'), grant_users => [qw/anonymous ensro/] },
       -retry_count => 0,
       -can_be_empty => 1,
-      -flow_into => 'grant',
     },
   ];
 }

@@ -38,17 +38,18 @@ Allowed parameters are:
 =cut
 
 use base qw/Bio::EnsEMBL::DBLoader::RunnableDB::Base Bio::EnsEMBL::DBLoader::RunnableDB::Database/;
+use Bio::EnsEMBL::Utils::Scalar qw/wrap_array/;
 
 sub param_defaults {
 	return {
-		grant_user => 'anonymous',
+		grant_users => ['anonymous'],
 	};
 }
 
 sub fetch_input {
 	my ($self) = @_;
 	$self->throw('No database given') unless $self->database();
-	$self->throw('No grant_user given') unless $self->param('grant_user');
+	$self->throw('No grant_user given') unless $self->param('grant_users');
 	return;
 }
 
@@ -56,16 +57,22 @@ sub run {
 	my ($self) = @_;
 	my $grant_template = q{GRANT SELECT, EXECUTE ON `%s`.* TO '%s'@'%%'};
 	my $database = $self->database();
-	my $grant_user = $self->param('grant_user');
-	my $ddl = sprintf($grant_template, $database, $grant_user);
-	$self->warning($ddl);
-	$self->param('ddl', $ddl);
+	my $grant_users = wrap_array($self->param('grant_users'));
+	my @ddl;
+	foreach my $grant_user (@{$grant_users}) {
+		my $grant_ddl = sprintf($grant_template, $database, $grant_user);
+		$self->warning($grant_ddl);
+		push(@ddl, $grant_ddl);
+	}
+	$self->param('ddl', \@ddl);
 	return;
 }
 
 sub write_output {
 	my ($self) = @_;
-	$self->target_dbc()->do($self->param('ddl'));
+	foreach my $ddl (@{$self->param('ddl')}) {
+		$self->target_dbc()->do($ddl);	
+	}
 	$self->target_dbc()->do('flush privileges');
 	return;
 }
