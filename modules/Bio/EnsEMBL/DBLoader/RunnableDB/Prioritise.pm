@@ -57,7 +57,7 @@ sub run {
 
 sub prioritise_human_variation {
   my ($self, $database, $priority) = @_;
-  if($database =~ /^homo_sapiens/ && $database =~ /_core_/) {
+  if($database =~ /^homo_sapiens/ && $database =~ /_variation_/) {
     $priority++;
   }
   return $priority;
