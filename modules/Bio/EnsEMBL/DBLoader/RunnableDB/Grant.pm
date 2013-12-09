@@ -60,7 +60,7 @@ use Bio::EnsEMBL::Utils::Scalar qw/wrap_array/;
 
 sub param_defaults {
 	return {
-		grant_users => ['anonymous'],
+		grant_users => ['anonymous', 'ensro'],
 	};
 }
 
