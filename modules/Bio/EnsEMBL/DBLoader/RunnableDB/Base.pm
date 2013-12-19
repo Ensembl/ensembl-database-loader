@@ -1,3 +1,4 @@
+
 =head1 LICENSE
 
 Copyright [1999-2013] Wellcome Trust Sanger Institute and the EMBL-European Bioinformatics Institute
@@ -15,6 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 =cut
+
 package Bio::EnsEMBL::DBLoader::RunnableDB::Base;
 
 use strict;
@@ -32,19 +34,21 @@ sub fetch_input {
   my ($self) = @_;
   my $work_directory = $self->param('work_directory');
   $work_directory = File::Spec->rel2abs($work_directory);
-  $self->param('work_directory', $work_directory);
+  $self->param( 'work_directory', $work_directory );
   return;
 }
 
 sub connect_ftp {
   my ($self) = @_;
-  my ($server, $port, $user, $pass) = (map { $self->param("ftp_${_}") } qw/host port user pass/);
-  my $debug = ($self->debug()) ? 2 : 0;
-  my $ftp = Net::FTP->new( $server, Debug => $debug, Port => $port )
-    or throw "Cannot connect to ${server}: $@";
-  $ftp->login( $user, $pass ) or throw 'Cannot log in '. $ftp->message();
+  my ( $server, $port, $user, $pass ) =
+    ( map { $self->param("ftp_${_}") } qw/host port user pass/ );
+  my $debug = ( $self->debug() ) ? 2 : 0;
+  my $ftp = Net::FTP->new( $server, Debug => $debug, Port => $port ) or
+    throw "Cannot connect to ${server}: $@";
+  $ftp->login( $user, $pass ) or
+    throw 'Cannot log in ' . $ftp->message();
   $ftp->binary();
-  $self->param('ftp', $ftp);
+  $self->param( 'ftp', $ftp );
   return $ftp;
 }
 
@@ -55,21 +59,27 @@ sub disconnect_ftp {
 }
 
 sub base_ftp_path {
-  my ($self) = @_;
-  my $release = $self->param('release');
+  my ($self)   = @_;
+  my $release  = $self->param('release');
   my $division = $self->param('division');
-  my @path = ('', 'pub', "release-${release}");
-  push(@path, $division) if $division;
-  push(@path, 'mysql');
-  return join(q{/},@path);
+  my $provisional = $self->param('prerelease') == 1 ? '.' : '';
+  if ( $release ne 'current' ) {
+    $release = "${provisional}release-${release}";
+  }
+  my @path = ( '', 'pub', "$release" );
+  push( @path, $division ) if $division;
+  push( @path, 'mysql' );
+  return join( q{/}, @path );
 }
 
 sub cwd_ftp_dir {
-  my ($self, $dirs) = @_;
+  my ( $self, $dirs ) = @_;
   my $ftp = $self->param('ftp');
   $dirs = wrap_array($dirs);
-  foreach my $wd (@{$dirs}) {
-    $ftp->cwd($wd) or throw "Cannot change working directory to ${wd}: ".$ftp->message();
+  foreach my $wd ( @{$dirs} ) {
+    $ftp->cwd($wd) or
+      throw "Cannot change working directory to ${wd}: " .
+      $ftp->message();
   }
   return;
 }
@@ -77,16 +87,18 @@ sub cwd_ftp_dir {
 sub ls_ftp_cwd {
   my ($self) = @_;
   my $ftp = $self->param('ftp');
-  my %files = (dirs => [], files => [] );
-  my @ls = $ftp->dir() or throw "Cannot ls the current working FTP directory: ".$ftp->message();
+  my %files = ( dirs => [], files => [] );
+  my @ls = $ftp->dir() or
+    throw "Cannot ls the current working FTP directory: " .
+    $ftp->message();
   foreach my $file (@ls) {
-    # Details come back like ls -l and grab first part which will look like
-    # drwxr-xr-x
-    my @split = split(/\s+/, $file, 9);
-    my $type = substr($split[0], 0, 1);
+ # Details come back like ls -l and grab first part which will look like
+ # drwxr-xr-x
+    my @split = split( /\s+/, $file, 9 );
+    my $type     = substr( $split[0], 0, 1 );
     my $filename = $split[8];
-    my $key = ($type eq 'd') ? 'dirs' : 'files';
-    push(@{$files{$key}}, $filename);
+    my $key      = ( $type eq 'd' ) ? 'dirs' : 'files';
+    push( @{ $files{$key} }, $filename );
   }
   return \%files;
 }
@@ -94,15 +106,16 @@ sub ls_ftp_cwd {
 ##### Local File system ops
 
 sub cwd_local_dir {
-  my ($self, @dirs) = @_;
+  my ( $self, @dirs ) = @_;
   my $dir = $self->local_dir(@dirs);
   chdir($dir) or throw "Cannot cd to '${dir}'";
   return;
 }
 
 sub local_dir {
-  my ($self, @dirs) = @_;
-  my $target = File::Spec->catdir($self->param('work_directory'), @dirs);
+  my ( $self, @dirs ) = @_;
+  my $target =
+    File::Spec->catdir( $self->param('work_directory'), @dirs );
   return $target;
 }
 
