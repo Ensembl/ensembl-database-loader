@@ -55,7 +55,8 @@ sub param_defaults {
   my ($self) = @_;
   return { mode               => 'all',
            hardcoded_db_hits  => {},
-           use_existing_files => 0, };
+           use_existing_files => 0,
+           prerelease         => 0 };
 }
 
 sub fetch_input {

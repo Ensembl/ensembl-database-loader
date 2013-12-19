@@ -62,7 +62,11 @@ sub base_ftp_path {
   my ($self)   = @_;
   my $release  = $self->param('release');
   my $division = $self->param('division');
-  my @path = ( '', 'pub', "release-${release}" );
+  my $provisional = $self->param('prerelease') == 1 ? '.' : '';
+  if ( $release ne 'current' ) {
+    $release = "${provisional}release-${release}";
+  }
+  my @path = ( '', 'pub', "$release" );
   push( @path, $division ) if $division;
   push( @path, 'mysql' );
   return join( q{/}, @path );

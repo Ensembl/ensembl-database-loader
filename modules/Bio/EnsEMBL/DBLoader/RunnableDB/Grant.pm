@@ -73,26 +73,32 @@ sub fetch_input {
 }
 
 sub run {
-  my ($self)         = @_;
-  my $grant_template = q{GRANT SELECT, EXECUTE ON `%s`.* TO '%s'@'%%'};
-  my $database       = $self->database();
-  my $grant_users    = wrap_array( $self->_get_users() );
-  my @ddl;
-  foreach my $grant_user ( @{$grant_users} ) {
-    my $grant_ddl = sprintf( $grant_template, $database, $grant_user );
-    $self->warning($grant_ddl);
-    push( @ddl, $grant_ddl );
+  my ($self) = @_;
+  if ( !$self->param('prerelease') ) {
+    my $grant_template =
+      q{GRANT SELECT, EXECUTE ON `%s`.* TO '%s'@'%%'};
+    my $database    = $self->database();
+    my $grant_users = wrap_array( $self->_get_users() );
+    my @ddl;
+    foreach my $grant_user ( @{$grant_users} ) {
+      my $grant_ddl =
+        sprintf( $grant_template, $database, $grant_user );
+      $self->warning($grant_ddl);
+      push( @ddl, $grant_ddl );
+    }
+    $self->param( 'ddl', \@ddl );
   }
-  $self->param( 'ddl', \@ddl );
   return;
 }
 
 sub write_output {
   my ($self) = @_;
-  foreach my $ddl ( @{ $self->param('ddl') } ) {
-    $self->target_dbc()->do($ddl);
+  if ( !$self->param('prerelease') ) {
+    foreach my $ddl ( @{ $self->param('ddl') } ) {
+      $self->target_dbc()->do($ddl);
+    }
+    $self->target_dbc()->do('flush privileges');
   }
-  $self->target_dbc()->do('flush privileges');
   return;
 }
 
