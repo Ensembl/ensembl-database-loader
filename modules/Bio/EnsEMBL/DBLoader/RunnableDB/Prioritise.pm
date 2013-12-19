@@ -1,3 +1,4 @@
+
 =head1 LICENSE
 
 Copyright [1999-2013] Wellcome Trust Sanger Institute and the EMBL-European Bioinformatics Institute
@@ -15,6 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 =cut
+
 package Bio::EnsEMBL::DBLoader::RunnableDB::Prioritise;
 
 use strict;
@@ -23,9 +25,7 @@ use base qw/Bio::EnsEMBL::DBLoader::RunnableDB::Base/;
 
 sub param_defaults {
   my ($self) = @_;
-  return {
-    priority => { species => [], group => [] }
-  };
+  return { priority => { species => [], group => [] } };
 }
 
 sub run {
@@ -34,30 +34,33 @@ sub run {
   my $database = $self->param('database');
   my $priority = 0;
 
-  foreach my $species (@{$self->param('priority')->{species}}) {
-    if($database =~ /^$species/xms) {
+  foreach my $species ( @{ $self->param('priority')->{species} } ) {
+    if ( $database =~ /^$species/xms ) {
       $priority++;
-      $self->warning("DB name ${database} matched the prioritised species ${species}");
+      $self->warning(
+        "DB name ${database} matched the prioritised species ${species}"
+      );
       last;
     }
   }
-  foreach my $group (@{$self->param('priority')->{group}}) {
-    if($database =~ /_${group}_/xms) {
+  foreach my $group ( @{ $self->param('priority')->{group} } ) {
+    if ( $database =~ /_${group}_/xms ) {
       $priority++;
-      $self->warning("DB name ${database} matched the prioritised group ${group}");
+      $self->warning(
+          "DB name ${database} matched the prioritised group ${group}");
       last;
     }
   }
-  
-  $priority = $self->prioritise_human_variation($database, $priority);
-  $self->param('priority', $priority);
+
+  $priority = $self->prioritise_human_variation( $database, $priority );
+  $self->param( 'priority', $priority );
 
   return;
-}
+} ## end sub run
 
 sub prioritise_human_variation {
-  my ($self, $database, $priority) = @_;
-  if($database =~ /^homo_sapiens/ && $database =~ /_variation_/) {
+  my ( $self, $database, $priority ) = @_;
+  if ( $database =~ /^homo_sapiens/ && $database =~ /_variation_/ ) {
     $priority++;
   }
   return $priority;
@@ -65,14 +68,14 @@ sub prioritise_human_variation {
 
 sub write_output {
   my ($self) = @_;
-  my $priority_to_flow = {
-    0 => 2, #basic flow
-    1 => 3, #higher
-    2 => 4, #highest
-    3 => 5, #special human variation
+  my $priority_to_flow = { 0 => 2,    #basic flow
+                           1 => 3,    #higher
+                           2 => 4,    #highest
+                           3 => 5,    #special human variation
   };
-  my $dataflow = $priority_to_flow->{$self->param('priority')};
-  $self->dataflow_output_id({ database => $self->param('database') }, $dataflow);
+  my $dataflow = $priority_to_flow->{ $self->param('priority') };
+  $self->dataflow_output_id( { database => $self->param('database') },
+                             $dataflow );
   return;
 }
 
