@@ -134,7 +134,7 @@ sub pipeline_analyses {
       -parameters    => { target_db => $self->o('target_db') },
       -hive_capacity => 4,
       -wait_for      => [qw/prioritise high_priority_load_files/],
-      -retry_count   => 1,
+      -max_retry_count   => 1,
       -failed_job_tolerance => 50,
       -can_be_empty         => 1,
       -flow_into =>
@@ -147,7 +147,7 @@ sub pipeline_analyses {
                   target_db                  => $self->o('target_db'),
                   user_submitted_grant_users => $self->o('grant_users'),
       },
-      -retry_count  => 0,
+      -max_retry_count  => 0,
       -can_be_empty => 1, }, ];
 } ## end sub pipeline_analyses
 
