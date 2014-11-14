@@ -59,6 +59,9 @@ sub default_options {
     #Automatically set name
     pipeline_name => 'mirror_ensembl_'.$self->o('mode').'_'.$self->o('release'),
 
+    #User email
+    email => $self->o( 'ENV', 'USER' ) . '@ebi.ac.uk',
+
     #Target DB
     target_db => {
       -host => $self->o('target_db_host'),
@@ -186,6 +189,18 @@ sub pipeline_analyses {
       },
       -retry_count => 0,
       -can_be_empty => 1,
+    },
+
+          ####### NOTIFICATION
+    {
+      -meadow_type=> 'LOCAL',
+      -logic_name => 'Notify',
+      -module     => 'Bio::EnsEMBL::DBLoader::RunnableDB::EmailSummary',
+      -parameters => {
+          email   => $self->o('email'),
+          subject => $self->o('pipeline_name').' has finished',
+      },
+      -wait_for   => ['grant'],
     },
   ];
 }
