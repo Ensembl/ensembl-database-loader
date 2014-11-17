@@ -1,13 +1,13 @@
 # Ensembl Mirrors Pipeline
 
-This is a re-implementation of the mirroring pipeline using the Hive infrastructure. This allows for a queue based scheduler to run the code as well as a local machine to load a database with automatic retry. For more information about Hive please consult http://www.ensembl.org/info/docs/eHive/index.html.
+This is a re-implementation of the mirroring pipeline using the Hive infrastructure. This allows for a queue based scheduler to run the code as well as a local machine to load a database with automatic retry. For more information about Hive please consult http://www.ensembl.org/info/docs/eHive.html.
 
 # Installing
 
 This pipeline requires:
 
 * A checkout of Ensembl core and hive (v68 minimum)
-  * Please see http://www.ensembl.org/info/docs/eHive/installation.html
+  * Please see http://www.ensembl.org/info/docs/eHive.html
   * The ENSEMBL_CVS_ROOT_DIR environment variable set to the checkout directory
 * BioPerl 1.2.3
 * A database for hive
