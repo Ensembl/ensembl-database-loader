@@ -107,7 +107,10 @@ sub pipeline_analyses {
         randomize => 1,
       },
       -input_ids => [{}],
-      -flow_into => { 2 => [qw/download/] },
+      -flow_into => {
+        1 => ['Notify'], 
+        2 => [qw/download/]
+      },
     },
 
     {
