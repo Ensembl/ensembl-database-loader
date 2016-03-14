@@ -148,7 +148,18 @@ sub pipeline_analyses {
                   user_submitted_grant_users => $self->o('grant_users'),
       },
       -max_retry_count  => 0,
-      -can_be_empty => 1, }, ];
+      -can_be_empty => 1, },
+                ####### NOTIFICATION
+    {
+      -meadow_type=> 'LOCAL',
+      -logic_name => 'Notify',
+      -module     => 'Bio::EnsEMBL::DBLoader::RunnableDB::EmailSummary',
+      -parameters => {
+          email   => $self->o('email'),
+          subject => $self->o('pipeline_name').' has finished',
+      },
+      -wait_for   => ['grant','load_files','high_priority_load_files'],
+    },];
 } ## end sub pipeline_analyses
 
 sub pipeline_wide_parameters {

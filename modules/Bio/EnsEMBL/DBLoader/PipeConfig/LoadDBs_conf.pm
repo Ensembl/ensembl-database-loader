@@ -203,7 +203,7 @@ sub pipeline_analyses {
           email   => $self->o('email'),
           subject => $self->o('pipeline_name').' has finished',
       },
-      -wait_for   => ['grant'],
+      -wait_for   => ['grant','load_files','high_priority_load_files','super_priority_load_files','human_variation_load_files'],
     },
   ];
 }
