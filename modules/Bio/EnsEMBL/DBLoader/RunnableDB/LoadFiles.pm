@@ -45,8 +45,9 @@ sub run {
 
   #Disconnect from the hive since we are going to be doing a lot of
   #DB & file system intensive operations
-  $self->dbc()->disconnect_if_idle();
-
+  if ( defined $self->dbc() ){
+    $self->dbc()->disconnect_if_idle();
+  }
   my $cwd = cwd();
   my $db  = $self->database();
 #TODO Replace with pre_cleanup() which fires whenever we have a retry_count > 0
