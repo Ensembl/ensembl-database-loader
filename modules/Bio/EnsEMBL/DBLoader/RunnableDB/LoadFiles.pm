@@ -31,6 +31,7 @@ use Cwd;
 use IO::File;
 use IO::Uncompress::Gunzip qw(gunzip $GunzipError);
 use File::Spec;
+use File::Slurp qw/read_file/;
 
 sub fetch_input {
   my ($self) = @_;
@@ -66,7 +67,14 @@ sub run {
   chdir( $self->local_dir($db) ) or
     throw 'Cannot change to ' . $self->local_dir($db);
 
-  $self->_load_sql();
+  if(defined $self->param('division')) {
+      # EG files can be loaded in one go
+      $self->_load_sql_single();
+  } else {
+      # Ensembl SQL files need splitting into views and tables
+      $self->_load_sql();
+  }
+
   my %files = $self->_dump_files();
   foreach my $table ( sort keys %files ) {
     print STDERR "Processing $table\n" if $self->debug();
@@ -136,6 +144,20 @@ s/DEFINER=.+ \s+ SQL \s+ SECURITY \s+ DEFINER/SQL SECURITY INVOKER/xms;
 
   return;
 } ## end sub _load_sql
+
+# for EG databases, SQL files do not need splitting
+sub _load_sql_single {
+  my ($self) = @_;
+  my $sql = $self->param('sql_filename');
+  if ( !-f $sql ) {
+    throw "Cannot find the expected SQL file $sql";
+  }
+  my $file = $self->_gunzip_file($sql);
+  my $sql_cmd = read_file($file);
+  $self->run_mysql_cmd($sql_cmd);
+  return;
+} ## end sub _load_sql
+
 
 #Loads everything from a file
 sub _load_data_file {
