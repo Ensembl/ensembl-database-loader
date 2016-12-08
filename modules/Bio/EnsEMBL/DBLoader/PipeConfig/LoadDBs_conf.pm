@@ -227,9 +227,9 @@ sub pipeline_wide_parameters {
 sub resource_classes {
   my ($self) = @_;
   return {
-      default => { 'LSF' => '-R "select[panfs_nobackup_production]"' },
+      default => { 'LSF' => '-q production-rh7' },
       himem =>
-        { 'LSF' => '-M 16000 -R "select[panfs_nobackup_production] rusage[mem=16000]"' }
+        { 'LSF' => '-q production-rh7 -M 16000 -R "rusage[mem=16000]"' }
   };
 }
 
