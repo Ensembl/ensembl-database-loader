@@ -41,6 +41,11 @@ sub default_options {
     #rsync flag
     rsync => 0,
 
+    #Location of the MySQL dump, filesystem or ftp url.
+    # E.g: /nfs/ensemblftp/PRIVATE/
+    # E.g: rsync://ftp.ensembl.org/ensembl/pub
+    rsync_url => '',
+
     #Required DBs; leave blank for all DBs
     databases => [],
 
@@ -107,7 +112,8 @@ sub pipeline_analyses {
       -logic_name  => 'download',
       -module => 'Bio::EnsEMBL::DBLoader::RunnableDB::DownloadDatabase',
       -flow_into => { 1 => [qw/prioritise/] },
-      -parameters           => { rsync => $self->o('rsync') },
+      -parameters           => { rsync => $self->o('rsync'),
+                                 rsync_url => $self->o('rsync_url') },
       -hive_capacity        => 5,
       -failed_job_tolerance => 10, },
 
