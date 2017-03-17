@@ -67,13 +67,8 @@ sub run {
   chdir( $self->local_dir($db) ) or
     throw 'Cannot change to ' . $self->local_dir($db);
 
-  if(defined $self->param('division')) {
-      # EG files can be loaded in one go
-      $self->_load_sql_single();
-  } else {
-      # Ensembl SQL files need splitting into views and tables
-      $self->_load_sql();
-  }
+  # EG and Ensembl files can be loaded in one go
+  $self->_load_sql_single();
 
   my %files = $self->_dump_files();
   foreach my $table ( sort keys %files ) {
@@ -106,44 +101,6 @@ sub _create_db {
   $self->target_dbc()->do("create database `$db`");
   return;
 }
-
-#Filters SQL into two files; 1 with tables & the other with views
-sub _load_sql {
-  my ($self) = @_;
-  my $sql = $self->param('sql_filename');
-  if ( !-f $sql ) {
-    throw "Cannot find the expected SQL file $sql";
-  }
-  my $file = $self->_gunzip_file($sql);
-
-  #Splitting view definitions into a separate file
-  my $table_sql = $self->_filter_file(
-    $file,
-    sub {
-      my ($line) = @_;
-      return ( $line !~ /CREATE ALGORITHM/ ) ? 1 : 0;
-    } );
-  $self->run_mysql_cmd($table_sql);
-
-  my $view_sql = $self->_filter_file(
-    $file,
-    sub {
-      my ($line) = @_;
-      return ( $line =~ /CREATE ALGORITHM/ ) ? 1 : 0;
-    },
-    sub {
-      my ($line) = @_;
-      $line =~
-s/DEFINER=.+ \s+ SQL \s+ SECURITY \s+ DEFINER/SQL SECURITY INVOKER/xms;
-      return $line;
-    } );
-
-  if ($view_sql) {
-    $self->run_mysql_cmd($view_sql);
-  }
-
-  return;
-} ## end sub _load_sql
 
 # for EG databases, SQL files do not need splitting
 sub _load_sql_single {
