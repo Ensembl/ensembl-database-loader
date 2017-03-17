@@ -79,7 +79,7 @@ sub run {
 sub download {
   my ($self) = @_;
   if ( $self->param('rsync') ) {
-    if ( $self->_rsync_url() ) {
+    if ( $self->param('rsync_url') ) {
       $self->_rsync_download();
       return;
     }
@@ -113,7 +113,7 @@ sub _ftp_download {
 sub _rsync_download {
   my ($self)         = @_;
   my $release        = $self->param('release');
-  my $base_rsync_url = $self->_rsync_url();
+  my $base_rsync_url = $self->param('rsync_url');
   my $database       = $self->param('database');
   my $rsync_url =
     "${base_rsync_url}/release-${release}/mysql/${database}";
@@ -238,12 +238,5 @@ sub _checksum_file {
   return $check;
 }
 
-sub _rsync_url {
-  my ($self) = @_;
-  if ( $self->param('ftp_host') eq 'ftp.ensembl.org' ) {
-    return 'rsync://ftp.ensembl.org/ensembl/pub';
-  }
-  return;
-}
 
 1;
