@@ -111,6 +111,7 @@ sub pipeline_analyses {
         column_names => ['database'],
         fan_branch_code => 2,
         randomize => 1,
+        rsync_url => $self->o('rsync_url'),
       },
       -input_ids => [{}],
       -flow_into => {

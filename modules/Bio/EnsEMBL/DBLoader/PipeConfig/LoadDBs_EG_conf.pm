@@ -42,7 +42,7 @@ sub default_options {
     rsync => 0,
 
     #Location of the MySQL dump, filesystem or ftp url.
-    # E.g: /nfs/ensemblftp/PRIVATE/
+    # E.g: /nfs/ensemblftp/PRIVATE
     # E.g: rsync://ftp.ensembl.org/ensembl/pub
     rsync_url => '',
 
@@ -104,7 +104,8 @@ sub pipeline_analyses {
                        mode            => $self->o('mode'),
                        column_names    => ['database'],
                        fan_branch_code => 2,
-                       randomize       => 1, },
+                       randomize       => 1,
+                       rsync_url => $self->o('rsync_url'), },
       -input_ids => [   {} ],
       -flow_into => { 2 => [qw/download/] }, },
 
