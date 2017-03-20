@@ -101,7 +101,7 @@ sub fetch_input {
 sub dirs {
   my ($self) = @_;
   my $dirs;
-  if ( $self->param('use_existing_files') ) {
+  if ( $self->param('use_existing_files') or defined $self->param('rsync_url') ) {
     $dirs = $self->_local_dirs();
   }
   else {
@@ -123,7 +123,13 @@ sub dirs {
 
 sub _local_dirs {
   my ($self) = @_;
-  my $work_dir = $self->local_dir();
+  my $work_dir;
+  if ($self->param('use_existing_files')){
+    $work_dir=$self->local_dir();
+  }
+  elsif (defined $self->param('rsync_url')){
+    $work_dir=$self->nfs_ftp_site_dir();
+  }
   throw "$work_dir does not exist" if !-d $work_dir;
   opendir( my $dh, $work_dir ) or
     throw "Cannot open $work_dir for directory listing: $!";

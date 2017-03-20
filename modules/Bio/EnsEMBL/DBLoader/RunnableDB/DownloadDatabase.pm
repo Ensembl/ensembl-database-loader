@@ -79,7 +79,7 @@ sub run {
 sub download {
   my ($self) = @_;
   if ( $self->param('rsync') ) {
-    if ( $self->param('rsync_url') ) {
+    if ( defined $self->param('rsync_url') ) {
       $self->_rsync_download();
       return;
     }

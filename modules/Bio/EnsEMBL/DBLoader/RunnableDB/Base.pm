@@ -120,4 +120,12 @@ sub local_dir {
   return $target;
 }
 
+sub nfs_ftp_site_dir {
+  my ( $self, @dirs ) = @_;
+  my $nfs_ftp_site_dir=$self->param('rsync_url')."/release-".$self->param('release')."/mysql/";
+  my $target =
+    File::Spec->catdir( $nfs_ftp_site_dir, @dirs );
+  return $target;
+}
+
 1;
