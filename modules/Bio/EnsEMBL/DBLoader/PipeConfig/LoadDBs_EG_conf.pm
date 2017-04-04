@@ -44,7 +44,7 @@ sub default_options {
     #Location of the MySQL dump, filesystem or ftp url.
     # E.g: /nfs/ensemblftp/PRIVATE
     # E.g: rsync://ftp.ensembl.org/ensembl/pub
-    rsync_url => '',
+    rsync_url => undef,
 
     #Required DBs; leave blank for all DBs
     databases => [],
