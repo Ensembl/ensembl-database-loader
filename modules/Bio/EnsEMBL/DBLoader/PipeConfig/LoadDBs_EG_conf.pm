@@ -63,7 +63,8 @@ sub default_options {
 
 #Set to true if you have already downloaded all the required files via another mechanism
     use_existing_files => 0,
-
+    
+    #Run pipeline without the grant step. The databases will be loaded but users won't be able to see them.
     prerelease => 0,
 
     #Automatically set name
