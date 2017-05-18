@@ -63,7 +63,7 @@ sub default_options {
 
 #Set to true if you have already downloaded all the required files via another mechanism
     use_existing_files => 0,
-    
+
     #Run pipeline without the grant step. The databases will be loaded but users won't be able to see them.
     prerelease => 0,
 
@@ -131,6 +131,7 @@ sub pipeline_analyses {
       -module        => 'Bio::EnsEMBL::DBLoader::RunnableDB::LoadFiles',
       -parameters    => { target_db => $self->o('target_db') },
       -hive_capacity => 8,
+      -priority => 10,
       -failed_job_tolerance => 100,
       -wait_for             => [qw/prioritise/],
       -can_be_empty         => 1,
@@ -142,7 +143,7 @@ sub pipeline_analyses {
       -module        => 'Bio::EnsEMBL::DBLoader::RunnableDB::LoadFiles',
       -parameters    => { target_db => $self->o('target_db') },
       -hive_capacity => 4,
-      -wait_for      => [qw/prioritise high_priority_load_files/],
+      -wait_for      => [qw/prioritise/],
       -max_retry_count   => 1,
       -failed_job_tolerance => 50,
       -can_be_empty         => 1,
