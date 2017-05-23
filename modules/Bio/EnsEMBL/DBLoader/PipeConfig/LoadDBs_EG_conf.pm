@@ -116,7 +116,7 @@ sub pipeline_analyses {
       -flow_into => { 1 => [qw/prioritise/] },
       -parameters           => { rsync => $self->o('rsync'),
                                  rsync_url => $self->o('rsync_url') },
-      -hive_capacity        => 5,
+      -analysis_capacity        => 5,
       -failed_job_tolerance => 10, },
 
     { -meadow_type => 'LOCAL',
