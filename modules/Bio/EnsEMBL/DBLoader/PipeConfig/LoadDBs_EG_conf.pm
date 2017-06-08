@@ -108,7 +108,8 @@ sub pipeline_analyses {
                        randomize       => 1,
                        rsync_url => $self->o('rsync_url'), },
       -input_ids => [   {} ],
-      -flow_into => { 2 => [qw/download/] }, },
+      -flow_into => { '2->A' => [qw/download/],
+        'A->1' => ['Notify'] }, },
 
     { -meadow_type => $self->o('meadow_type'),
       -logic_name  => 'download',
@@ -133,7 +134,6 @@ sub pipeline_analyses {
       -hive_capacity => 8,
       -priority => 10,
       -failed_job_tolerance => 100,
-      -wait_for             => [qw/prioritise/],
       -can_be_empty         => 1,
       -flow_into =>
         { 1 => { 'grant' => { database => '#database#' } } }, },
@@ -143,7 +143,6 @@ sub pipeline_analyses {
       -module        => 'Bio::EnsEMBL::DBLoader::RunnableDB::LoadFiles',
       -parameters    => { target_db => $self->o('target_db') },
       -hive_capacity => 4,
-      -wait_for      => [qw/prioritise/],
       -max_retry_count   => 1,
       -failed_job_tolerance => 50,
       -can_be_empty         => 1,
@@ -168,7 +167,6 @@ sub pipeline_analyses {
           email   => $self->o('email'),
           subject => $self->o('pipeline_name').' has finished',
       },
-      -wait_for   => ['grant','load_files','high_priority_load_files'],
     },];
 } ## end sub pipeline_analyses
 
