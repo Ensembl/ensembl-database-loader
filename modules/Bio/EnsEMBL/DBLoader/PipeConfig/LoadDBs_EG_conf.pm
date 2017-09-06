@@ -69,7 +69,7 @@ sub default_options {
 
     #Automatically set name
     pipeline_name => 'mirror_eg_' .
-      $self->o('mode') . '_' . $self->o('release'),
+      $self->o('mode') . '_' . $self->o('division') . '_' . $self->o('release'),
 
     #Target DB
     target_db => { -host => $self->o('target_db_host'),
