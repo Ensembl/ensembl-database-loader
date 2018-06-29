@@ -125,8 +125,32 @@ sub pipeline_analyses {
       -module      => 'Bio::EnsEMBL::DBLoader::RunnableDB::Prioritise',
       -parameters  => { priority => $self->o('priority') },
       -flow_into =>
-        { 2 => ['load_files'], 3 => ['high_priority_load_files'] } },
+        { 2 => ['load_files'], 3 => ['high_priority_load_files'], 4 => ['super_priority_load_files'],
+        5 => ['human_variation_load_files'] } },
 
+    {
+      -meadow_type=> $self->o('meadow_type'),
+      -logic_name => 'human_variation_load_files',
+      -module => 'Bio::EnsEMBL::DBLoader::RunnableDB::LoadFiles',
+      -parameters => { target_db => $self->o('target_db') },
+      -failed_job_tolerance => 100,
+      -can_be_empty => 1,
+      -hive_capacity => 4,
+      -priority => 30,
+      -flow_into  => { 1 => {'grant' => { database => '#database#'}} },
+    },
+
+    {
+      -meadow_type=> $self->o('meadow_type'),
+      -logic_name => 'super_priority_load_files',
+      -module => 'Bio::EnsEMBL::DBLoader::RunnableDB::LoadFiles',
+      -parameters => { target_db => $self->o('target_db') },
+      -hive_capacity => 4,
+      -priority => 20,
+      -failed_job_tolerance => 100,
+      -can_be_empty => 1,
+      -flow_into  => { 1 => {'grant' => { database => '#database#'}} },
+    },
     { -meadow_type   => $self->o('meadow_type'),
       -logic_name    => 'high_priority_load_files',
       -module        => 'Bio::EnsEMBL::DBLoader::RunnableDB::LoadFiles',
