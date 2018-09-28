@@ -107,7 +107,6 @@ sub pipeline_analyses {
       -meadow_type=> $self->o('meadow_type'),
       -logic_name => 'find_dbs',
       -module => 'Bio::EnsEMBL::DBLoader::RunnableDB::DatabaseFactory',
-      -meadow_type=> 'LOCAL',
       -parameters => {
         databases => $self->o('databases'),
         mode => $self->o('mode'),
@@ -133,9 +132,7 @@ sub pipeline_analyses {
       -analysis_capacity => 5,
       -failed_job_tolerance => 10,
     },
-
     {
-      -meadow_type=> 'LOCAL',
       -logic_name => 'prioritise',
       -module => 'Bio::EnsEMBL::DBLoader::RunnableDB::Prioritise',
       -parameters => { priority => $self->o('priority') },
@@ -194,9 +191,7 @@ sub pipeline_analyses {
       -can_be_empty => 1,
       -flow_into  => { 1 => {'grant' => { database => '#database#'}} },
     },
-
     {
-      -meadow_type=> 'LOCAL',
       -logic_name => 'grant',
       -module => 'Bio::EnsEMBL::DBLoader::RunnableDB::Grant',
       -parameters => { 
@@ -206,10 +201,8 @@ sub pipeline_analyses {
       -max_retry_count => 0,
       -can_be_empty => 1,
     },
-
           ####### NOTIFICATION
     {
-      -meadow_type=> 'LOCAL',
       -logic_name => 'Notify',
       -module     => 'Bio::EnsEMBL::DBLoader::RunnableDB::EmailSummary',
       -parameters => {
