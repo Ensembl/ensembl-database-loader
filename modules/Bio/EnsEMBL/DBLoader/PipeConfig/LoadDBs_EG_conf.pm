@@ -71,6 +71,9 @@ sub default_options {
     pipeline_name => 'mirror_eg_' .
       $self->o('mode') . '_' . $self->o('division') . '_' . $self->o('release'),
 
+    #User email
+    email => $self->o( 'ENV', 'USER' ) . '@ebi.ac.uk',
+
     #Target DB
     target_db => { -host => $self->o('target_db_host'),
                    -port => $self->o('target_db_port'),

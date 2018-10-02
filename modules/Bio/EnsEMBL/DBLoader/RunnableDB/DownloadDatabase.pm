@@ -115,8 +115,20 @@ sub _rsync_download {
   my $release        = $self->param('release');
   my $base_rsync_url = $self->param('rsync_url');
   my $database       = $self->param('database');
-  my $rsync_url =
-    "${base_rsync_url}/release-${release}/mysql/${database}";
+  my $division       = $self->param('division');
+  my $prerelease     = $self->param('prerelease');
+
+  my $rsync_url = $base_rsync_url;
+  if ($prerelease) {
+    $rsync_url .= "/.release-$release";
+  } else {
+    $rsync_url .= "/release-$release";
+  }
+  if ($division) {
+    $rsync_url .= "/$division";
+  }
+  $rsync_url .= "/mysql/${database}";
+
   my $verbose = ( $self->debug() ) ? '--verbose' : '--quiet';
   my $cmd = "rsync --recursive $verbose $rsync_url .";
   $self->_create_local_dir( 0, $database );
