@@ -122,7 +122,22 @@ sub local_dir {
 
 sub nfs_ftp_site_dir {
   my ( $self, @dirs ) = @_;
-  my $nfs_ftp_site_dir=$self->param('rsync_url')."/release-".$self->param('release')."/mysql/";
+  my $release        = $self->param('release');
+  my $base_rsync_url = $self->param('rsync_url');
+  my $division       = $self->param('division');
+  my $prerelease     = $self->param('prerelease');
+
+  my $nfs_ftp_site_dir = $base_rsync_url;
+  if ($prerelease) {
+    $nfs_ftp_site_dir .= "/.release-$release";
+  } else {
+    $nfs_ftp_site_dir .= "/release-$release";
+  }
+  if ($division) {
+    $nfs_ftp_site_dir .= "/$division";
+  }
+  $nfs_ftp_site_dir .= "/mysql/";
+
   my $target =
     File::Spec->catdir( $nfs_ftp_site_dir, @dirs );
   return $target;
