@@ -117,6 +117,7 @@ sub pipeline_analyses {
       -logic_name  => 'download',
       -module => 'Bio::EnsEMBL::DBLoader::RunnableDB::DownloadDatabase',
       -flow_into => { 1 => [qw/prioritise/] },
+      -rc_name         => 'himem',
       -parameters           => { rsync => $self->o('rsync'),
                                  rsync_url => $self->o('rsync_url') },
       -analysis_capacity        => 5,
