@@ -130,7 +130,7 @@ sub _rsync_download {
   $rsync_url .= "/mysql/${database}";
 
   my $verbose = ( $self->debug() ) ? '--verbose' : '--quiet';
-  my $cmd = "rsync --recursive $verbose $rsync_url .";
+  my $cmd = "rsync --recursive --delete $verbose $rsync_url .";
   $self->_create_local_dir( 0, $database );
   print STDERR "Running: $cmd\n" if $self->debug();
   system($cmd);
