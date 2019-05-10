@@ -212,9 +212,9 @@ sub pipeline_wide_parameters {
 sub resource_classes {
   my ($self) = @_;
   return {
-      default => { 'LSF' => '-q production-rh7' },
+      default => { 'LSF' => '-q production-rh74' },
       himem =>
-        { 'LSF' => '-q production-rh7 -M 16000 -R "rusage[mem=16000]"' }
+        { 'LSF' => '-q production-rh74 -M 16000 -R "rusage[mem=16000]"' }
   };
 }
 
