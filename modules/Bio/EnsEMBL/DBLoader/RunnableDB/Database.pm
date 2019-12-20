@@ -73,6 +73,7 @@ sub is_view {
       my ($row) = @_;
       $view = ( $row->[1] =~ /view/xmsi ) ? 1 : 0;
     } );
+  return $view;
 }
 
 sub run_mysql_cmd {
